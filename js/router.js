@@ -5,7 +5,7 @@ import { isAuthenticated, getUserRole } from "./utils/auth.js";
 import { renderAccueilPage } from "./pages/accueilPage.js";
 import { renderLoginPage } from "./pages/loginPage.js";
 import { renderMonGroupePage } from "./pages/monGroupePage.js";
-import { renderGroupesPage } from "./pages/groupesPage.js";
+import { renderGroupesPage } from "./pages/groupePage.js";
 import { renderPelerinsPage } from "./pages/pelerinsPage.js";
 
 const routes = {
