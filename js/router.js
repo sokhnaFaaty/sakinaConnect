@@ -2,6 +2,9 @@ import { showToast } from "./components/toast.js";
 import { ROLES, HOME_PAGE_BY_ROLE } from "./config/roles.js";
 import { isAuthenticated, getUserRole } from "./utils/auth.js";
 
+import { renderAccueilPage } from "./pages/accueilPage.js";
+import { renderLoginPage } from "./pages/loginPage.js";
+
 const routes = {
 accueil: renderAccueilPage,
   login: renderLoginPage,
