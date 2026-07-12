@@ -1,4 +1,4 @@
-export const API_BASE_URL = "https:https://backendsakinaconnect.onrender.com";
+export const API_BASE_URL = "https://backendsakinaconnect.onrender.com";
 
 export const ENDPOINTS = {
 utilisateurs: `${API_BASE_URL}/utilisateurs`,

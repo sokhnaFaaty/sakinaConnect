@@ -18,7 +18,6 @@ const routes = {
 
 const PUBLIC_PAGES = ["accueil", "login"];
 
-// Chaque page déclare la liste des rôles autorisés
 const ROUTE_PERMISSIONS = {
   groupes: [ROLES.ADMIN],
   pelerins: [ROLES.ADMIN],
@@ -27,7 +26,7 @@ const ROUTE_PERMISSIONS = {
 
 function canAccess(page, role) {
   const allowedRoles = ROUTE_PERMISSIONS[page];
-  return !allowedRoles || allowedRoles.includes(role); // pas de restriction = accès libre
+  return !allowedRoles || allowedRoles.includes(role);
 }
 
 const DEFAULT_PAGE = "accueil";
@@ -44,8 +43,6 @@ function updatePageUrl(page) {
   history.pushState(null, "", url);
 }
 
-// Affiche le loader, appelle la page, gère les erreurs
-// (factorisé ici pour ne pas dupliquer ce bloc dans chaque cas de navigate())
 async function afficherPage(activePage) {
   const app = document.getElementById("app");
   const route = routes[activePage];
@@ -69,10 +66,6 @@ async function afficherPage(activePage) {
         </div>
         <h1 class="text-2xl font-black tracking-tight text-slate-950">Erreur de chargement</h1>
         <p class="mt-2 text-sm leading-6 text-slate-600">${error.message}</p>
-        <p class="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-          Vérifie que JSON Server est bien lancé avec :
-          <strong class="font-black text-slate-950">npx json-server db.json --port 3000</strong>
-        </p>
       </section>
     `;
     showToast(error.message, "error");
@@ -82,14 +75,12 @@ async function afficherPage(activePage) {
 export async function navigate(page = DEFAULT_PAGE, updateUrl = true) {
   const activePage = routes[page] ? page : DEFAULT_PAGE;
 
-  // ── Guard 0 : page publique → accès libre, pas besoin d'être connecté ──
   if (PUBLIC_PAGES.includes(activePage)) {
     if (updateUrl) updatePageUrl(activePage);
     await afficherPage(activePage);
     return;
   }
 
-  // ── Guard 1 : page privée + non authentifié → renvoi vers login ──
   if (!isAuthenticated()) {
     await navigate("login", true);
     return;
@@ -97,7 +88,6 @@ export async function navigate(page = DEFAULT_PAGE, updateUrl = true) {
 
   const role = getUserRole();
 
-  // ── Guard 2 : rôle sans accès à cette page → redirection vers SON tableau de bord ──
   if (!canAccess(activePage, role)) {
     showToast("Accès refusé.", "error");
     await navigate(HOME_PAGE_BY_ROLE[role], true);
