@@ -1,112 +1,106 @@
-import { showToast } from "./components/toast.js";
-import { ROLES, HOME_PAGE_BY_ROLE } from "./config/roles.js";
-import { isAuthenticated, getUserRole } from "./utils/auth.js";
+// pages/monGroupePage.js
+import { pageHeader } from "../components/pageHeader.js";
+import { renderTable } from "../components/table.js";
+import { escapeHtml } from "../utils/html.js";
+import { getSession } from "../utils/auth.js";
+import { getGuideByUtilisateurId, getGroupeDuGuide } from "../services/guideService.js";
+import { getPelerinsDuGroupe } from "../services/pelerinService.js";
+import { getUtilisateurs } from "../services/utilisateurService.js";
+import { getHotels } from "../services/hotelService.js";
 
-import { renderAccueilPage } from "./pages/accueilPage.js";
-import { renderLoginPage } from "./pages/loginPage.js";
-import { renderMonGroupePage } from "./pages/monGroupePage.js";
-import { renderGroupesPage } from "./pages/groupesPage.js";
-import { renderPelerinsPage } from "./pages/pelerinsPage.js";
-
-const routes = {
-  accueil: renderAccueilPage,
-  login: renderLoginPage,
-  groupes: renderGroupesPage,
-  pelerins: renderPelerinsPage,
-  "mon-groupe": renderMonGroupePage,
-};
-
-const PUBLIC_PAGES = ["accueil", "login"];
-
-// Chaque page déclare la liste des rôles autorisés
-const ROUTE_PERMISSIONS = {
-  groupes: [ROLES.ADMIN],
-  pelerins: [ROLES.ADMIN],
-  "mon-groupe": [ROLES.GUIDE],
-};
-
-function canAccess(page, role) {
-  const allowedRoles = ROUTE_PERMISSIONS[page];
-  return !allowedRoles || allowedRoles.includes(role); // pas de restriction = accès libre
-}
-
-const DEFAULT_PAGE = "accueil";
-
-export function getCurrentPageFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const page = params.get("page");
-  return routes[page] ? page : DEFAULT_PAGE;
-}
-
-function updatePageUrl(page) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("page", page);
-  history.pushState(null, "", url);
-}
-
-// Affiche le loader, appelle la page, gère les erreurs
-// (factorisé ici pour ne pas dupliquer ce bloc dans chaque cas de navigate())
-async function afficherPage(activePage) {
+export async function renderMonGroupePage() {
   const app = document.getElementById("app");
-  const route = routes[activePage];
+  const user = getSession();
 
-  app.innerHTML = `
-    <div class="grid min-h-[50vh] place-items-center rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
-      <div>
-        <div class="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
-        <p class="mt-4 text-sm font-bold text-slate-500">Chargement...</p>
-      </div>
-    </div>
-  `;
+  // 1. Retrouver la fiche guide liée au compte connecté
+  const guide = await getGuideByUtilisateurId(user.id);
 
-  try {
-    await route();
-  } catch (error) {
+  if (!guide) {
     app.innerHTML = `
-      <section class="rounded-[2rem] border border-rose-200 bg-white p-8 shadow-sm">
-        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-        <h1 class="text-2xl font-black tracking-tight text-slate-950">Erreur de chargement</h1>
-        <p class="mt-2 text-sm leading-6 text-slate-600">${error.message}</p>
-        <p class="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-          Vérifie que JSON Server est bien lancé avec :
-          <strong class="font-black text-slate-950">npx json-server db.json --port 3000</strong>
-        </p>
+      <section class="rounded-[2rem] border border-amber-200 bg-amber-50 p-8 text-center">
+        <p class="text-sm font-semibold text-amber-700">Aucun profil guide associé à ce compte.</p>
       </section>
     `;
-    showToast(error.message, "error");
-  }
-}
-
-export async function navigate(page = DEFAULT_PAGE, updateUrl = true) {
-  const activePage = routes[page] ? page : DEFAULT_PAGE;
-
-  // ── Guard 0 : page publique → accès libre, pas besoin d'être connecté ──
-  if (PUBLIC_PAGES.includes(activePage)) {
-    if (updateUrl) updatePageUrl(activePage);
-    await afficherPage(activePage);
     return;
   }
 
-  // ── Guard 1 : page privée + non authentifié → renvoi vers login ──
-  if (!isAuthenticated()) {
-    await navigate("login", true);
+  // 2. Retrouver le groupe qu'il encadre (un seul groupe par guide)
+  const groupe = await getGroupeDuGuide(guide.idGuide);
+
+  if (!groupe) {
+    app.innerHTML = `
+      <section class="rounded-[2rem] border border-slate-200 bg-white p-8 text-center">
+        <p class="text-sm font-semibold text-slate-500">Aucun groupe ne t'a encore été assigné.</p>
+      </section>
+    `;
     return;
   }
 
-  const role = getUserRole();
+  // 3. Charger les pèlerins de ce groupe + les hôtels pour affichage
+  const [pelerins, utilisateurs, hotels] = await Promise.all([
+    getPelerinsDuGroupe(groupe.idGroupe),
+    getUtilisateurs(),
+    getHotels(),
+  ]);
 
-  // ── Guard 2 : rôle sans accès à cette page → redirection vers SON tableau de bord ──
-  if (!canAccess(activePage, role)) {
-    showToast("Accès refusé.", "error");
-    await navigate(HOME_PAGE_BY_ROLE[role], true);
-    return;
-  }
+  const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
+  const hotelMap = Object.fromEntries(hotels.map((h) => [h.idHotel, h.nom]));
 
-  if (updateUrl) {
-    updatePageUrl(activePage);
-  }
+  const nbApprouves = pelerins.filter((p) => p.statutVisa === "APPROUVE").length;
 
-  await afficherPage(activePage);
+  app.innerHTML = `
+    <section>
+      ${pageHeader({
+        kicker: "Espace Guide",
+        title: `Mon groupe : ${escapeHtml(groupe.nom)}`,
+        subtitle: "Consulte la logistique, les pèlerins assignés et les informations de ton groupe.",
+      })}
+
+      <!-- Chiffres clés -->
+      <div class="mb-6 grid gap-4 sm:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Effectif pèlerins</p>
+          <p class="mt-1 text-2xl font-black text-slate-950">${pelerins.length}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Visas approuvés</p>
+          <p class="mt-1 text-2xl font-black text-slate-950">${nbApprouves}/${pelerins.length}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Dates du voyage</p>
+          <p class="mt-1 text-sm font-bold text-slate-950">${escapeHtml(groupe.dateDepart)} → ${escapeHtml(groupe.dateRetour)}</p>
+        </div>
+      </div>
+
+      <!-- Infos hôtels -->
+      <div class="mb-6 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Hôtel à la Mecque</p>
+          <p class="mt-1 text-sm font-bold text-slate-950">${escapeHtml(hotelMap[groupe.hotelMecqueId] || "-")}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Hôtel à Médine</p>
+          <p class="mt-1 text-sm font-bold text-slate-950">${escapeHtml(hotelMap[groupe.hotelMedineId] || "-")}</p>
+        </div>
+      </div>
+
+      <!-- Liste des pèlerins -->
+      <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="mb-4 text-xl font-black text-slate-950">Liste de mon Groupe (${pelerins.length})</h2>
+        ${renderTable({
+          rows: pelerins,
+          emptyMessage: "Aucun pèlerin dans ce groupe pour l'instant.",
+          columns: [
+            {
+              label: "Nom Complet",
+              render: (p) => escapeHtml(utilisateurMap[p.utilisateurId]?.nomComplet || "—"),
+            },
+            { label: "N Passeport", render: (p) => escapeHtml(p.numeroPasseport) },
+            { label: "Statut Visa", render: (p) => escapeHtml(p.statutVisa) },
+            { label: "Santé", render: (p) => escapeHtml(p.informationsMedicales || "----") },
+          ],
+        })}
+      </article>
+    </section>
+  `;
 }
