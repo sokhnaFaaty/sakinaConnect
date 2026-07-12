@@ -1,3 +1,4 @@
+// pages/loginPage.js
 import { login } from "../services/authService.js";
 import { navigate } from "../router.js";
 import { HOME_PAGE_BY_ROLE } from "../config/roles.js";
@@ -13,13 +14,14 @@ export function renderLoginPage() {
   const main = document.querySelector("main");
   main.className = "min-h-screen font-sans";
 
-  main.innerHTML = `
+  const app = document.getElementById("app");
+  app.className = "";
+  app.innerHTML = `
     <div class="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
          style="background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('./assets/login-bg.jpg');">
 
       <div class="w-full max-w-md overflow-hidden rounded-2xl bg-[#F2F2DE] shadow-2xl">
 
-        <!-- En-tête vert avec retour accueil -->
         <div class="bg-[#333D2A] px-6 py-6 text-center text-white">
           <button id="backToAccueilBtn" class="mb-3 flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white">
             <i class="fa-solid fa-arrow-left"></i> Accueil
@@ -29,7 +31,6 @@ export function renderLoginPage() {
           <p class="mt-1 text-xs text-slate-300">Gestion sereine et organisation de la logistique physique</p>
         </div>
 
-        <!-- Formulaire -->
         <div class="border-t-4 border-[#BC7B3B] p-6">
 
           <div id="loginError" class="mb-4 hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
@@ -77,14 +78,12 @@ function bindLoginEvents() {
 
   backBtn.addEventListener("click", () => navigate("accueil"));
 
-  // Afficher/masquer le mot de passe
   toggleBtn.addEventListener("click", () => {
     const isPassword = passwordInput.type === "password";
     passwordInput.type = isPassword ? "text" : "password";
     toggleIcon.className = isPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
   });
 
-  // Cacher l'erreur dès que l'utilisateur retape quelque chose
   emailInput.addEventListener("input", () => {
     if (emailInput.value.trim()) hideError("loginEmail", "loginEmailError");
   });
@@ -93,7 +92,6 @@ function bindLoginEvents() {
     if (passwordInput.value.trim()) hideError("loginPassword", "loginPasswordError");
   });
 
-  // Connexion au clic ou en appuyant sur Entrée
   loginBtn.addEventListener("click", handleLogin);
   passwordInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") handleLogin();
@@ -105,12 +103,10 @@ async function handleLogin() {
   const password = document.getElementById("loginPassword").value;
   const loginBtn = document.getElementById("loginBtn");
 
-  // On cache le message d'erreur global avant de revérifier
   document.getElementById("loginError").classList.add("hidden");
 
   let hasError = false;
 
-  // Vérification de l'email via validators.js
   const emailError = validateLoginEmail(email);
   if (emailError) {
     showError("loginEmail", "loginEmailError", emailError);
@@ -119,7 +115,6 @@ async function handleLogin() {
     hideError("loginEmail", "loginEmailError");
   }
 
-  // Vérification du mot de passe via validators.js
   const passwordError = validateLoginPassword(password);
   if (passwordError) {
     showError("loginPassword", "loginPasswordError", passwordError);
@@ -128,10 +123,8 @@ async function handleLogin() {
     hideError("loginPassword", "loginPasswordError");
   }
 
-  // Si un champ est invalide, on s'arrête là, pas d'appel au serveur
   if (hasError) return;
 
-  // État "chargement" sur le bouton
   loginBtn.disabled = true;
   loginBtn.innerHTML = `
     <div class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
@@ -139,17 +132,12 @@ async function handleLogin() {
   `;
 
   try {
-    // login() vérifie email + motDePasse via JSON Server (services/authService.js)
     const user = await login(email, password);
-
-    // Une fois connecté, on redirige vers SON tableau de bord selon son rôle
     await navigate(HOME_PAGE_BY_ROLE[user.role] || "accueil");
   } catch (error) {
-    // Email/mot de passe incorrect, ou serveur injoignable
     document.getElementById("loginErrorMessage").textContent = error.message;
     document.getElementById("loginError").classList.remove("hidden");
 
-    // On réactive le bouton pour réessayer
     loginBtn.disabled = false;
     loginBtn.innerHTML = `Connexion`;
   }
