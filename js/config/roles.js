@@ -7,8 +7,8 @@ export const ROLES = {
 
 
 export const HOME_PAGE_BY_ROLE = {
-  [ROLES.ADMIN]: "dashboard-admin",
-  [ROLES.GUIDE]: "dashboard-guide",
+  [ROLES.ADMIN]: "groupes",
+  [ROLES.GUIDE]: "mon-groupe",
   [ROLES.PELERIN]: "dashboard-pelerin",
   [ROLES.PROCHE]: "dashboard-proche",
 };

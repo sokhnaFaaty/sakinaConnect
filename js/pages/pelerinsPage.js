@@ -11,9 +11,12 @@ import {
   deletePelerin,
 } from "../services/pelerinService.js";
 import { getUtilisateurs } from "../services/utilisateurService.js";
-import { createProche } from "../services/procheService.js";
+import { createProche,getProches } from "../services/procheService.js";
 import { getGroupes } from "../services/groupeService.js";
 import { uploadUserPhoto } from "../services/cloudinaryService.js";
+import { getHotels } from "../services/hotelService.js";
+import { getGuides } from "../services/guideService.js";
+
 
 // ---------- Corps du formulaire ----------
 function pelerinFormBody(pelerin = null, groupes = []) {
@@ -138,7 +141,6 @@ function attachProcheToggle(modal) {
     });
   });
 }
-
 // ---------- Formulaire principal ----------
 async function openPelerinForm(pelerin = null) {
   const groupes = await getGroupes();
@@ -278,19 +280,115 @@ async function openPelerinForm(pelerin = null) {
     },
   });
 }
+// ---------- Modale : détail d'un pèlerin ----------
+export async function openPelerinDetail(pelerin, utilisateurMap, groupeMap, hotels, guides) {
+  const utilisateur = utilisateurMap[pelerin.utilisateurId];
+  const groupe = groupeMap[pelerin.groupeId];
+  const hotelMecque = groupe ? hotels.find((h) => h.idHotel === groupe.hotelMecqueId)?.nom : "-";
+  const hotelMedine = groupe ? hotels.find((h) => h.idHotel === groupe.hotelMedineId)?.nom : "-";
+  const guide = groupe ? guides.find((g) => g.idGuide === groupe.guideId) : null;
+  const guideNom = guide ? utilisateurMap[guide.utilisateurId]?.nomComplet : "-";
 
+  // Le proche associé, s'il existe, vient du service procheService (à récupérer avant l'appel)
+  const proches = await getProches();
+  const procheAssocie = proches.find((pr) => pr.pelerinId === pelerin.idPelerin);
+  const procheUtilisateur = procheAssocie ? utilisateurMap[procheAssocie.utilisateurId] : null;
+
+  const visaBadge = pelerin.statutVisa === "APPROUVE"
+    ? `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700"><i class="fa-solid fa-check"></i> Approuvé</span>`
+    : `<span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">${escapeHtml(pelerin.statutVisa)}</span>`;
+
+  openModal({
+    title: "",
+    body: `
+      <div class="-m-6 mb-0 flex items-start gap-4 border-b border-slate-100 p-6 pb-5">
+        <div class="h-16 w-16 overflow-hidden rounded-full bg-slate-100">
+          ${utilisateur?.photo ? `<img src="${escapeHtml(utilisateur.photo)}" class="h-full w-full object-cover" />` : `<div class="flex h-full w-full items-center justify-center text-slate-300"><i class="fa-solid fa-user text-2xl"></i></div>`}
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-black text-slate-950">${escapeHtml(utilisateur?.nomComplet || "-")}</h2>
+            <span class="rounded-full bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">${escapeHtml(pelerin.idPelerin.slice(0, 5).toUpperCase())}</span>
+          </div>
+          <p class="text-sm text-slate-500">Passeport : ${escapeHtml(pelerin.numeroPasseport)}</p>
+          <p class="mt-1 text-sm text-slate-500">Statut du Visa : ${visaBadge}</p>
+        </div>
+      </div>
+
+      <div class="grid gap-4 pt-4 sm:grid-cols-2">
+        <div>
+          <p class="mb-2 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#0B6E4F]">
+            <i class="fa-solid fa-route"></i> Logistique &amp; Accompagnement
+          </p>
+          <div class="rounded-2xl bg-[#F2F2DE] p-4 text-sm">
+            <p class="text-slate-500">Guide spirituel assigné :</p>
+            <p class="mb-3 font-bold text-slate-800">${escapeHtml(guideNom)}</p>
+            <p class="text-slate-500">Groupe de voyage :</p>
+            <p class="font-bold text-slate-800">${escapeHtml(groupe?.nom || "-")}</p>
+          </div>
+
+          <p class="mb-2 mt-4 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#0B6E4F]">
+            <i class="fa-solid fa-hotel"></i> Hébergements d'hôtels
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-[#F2F2DE] p-3 text-sm">
+              <p class="text-xs font-bold text-slate-500">LA MECQUE :</p>
+              <p class="font-bold text-slate-800">${escapeHtml(hotelMecque || "-")}</p>
+            </div>
+            <div class="rounded-2xl bg-[#F2F2DE] p-3 text-sm">
+              <p class="text-xs font-bold text-slate-500">MÉDINE :</p>
+              <p class="font-bold text-slate-800">${escapeHtml(hotelMedine || "-")}</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="mb-2 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-rose-600">
+            <i class="fa-solid fa-heart-pulse"></i> Fiche médicale &amp; pathologies
+          </p>
+          <div class="rounded-2xl bg-rose-50 p-4 text-sm">
+            <p class="text-xs font-bold text-rose-700">PATHOLOGIES SIGNALÉES :</p>
+            <p class="mt-1 text-slate-700">${escapeHtml(pelerin.informationsMedicales || "Aucune pathologie signalée.")}</p>
+          </div>
+
+          <p class="mb-2 mt-4 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-rose-600">
+            <i class="fa-solid fa-hand-holding-heart"></i> Proches &amp; contacts d'urgence
+          </p>
+          <div class="rounded-2xl bg-[#F2F2DE] p-4 text-sm">
+            <p class="text-slate-500">Contact d'urgence principal :</p>
+            <p class="font-bold text-slate-800">${escapeHtml(pelerin.contactUrgenceNom)}</p>
+            <p class="mb-3 text-slate-600">${escapeHtml(pelerin.contactUrgenceTelephone)}</p>
+            <p class="text-slate-500">Proche associé (Portail Famille) :</p>
+            <p class="font-bold text-slate-800">${procheUtilisateur ? escapeHtml(procheUtilisateur.nomComplet) + " (" + escapeHtml(procheAssocie.lienParente) + ")" : "Aucun proche associé."}</p>
+          </div>
+
+          <p class="mb-2 mt-4 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-rose-600">
+            <i class="fa-solid fa-triangle-exclamation"></i> Historique d'urgence SOS récent
+          </p>
+          <div class="rounded-2xl bg-[#F2F2DE] p-4 text-sm text-slate-400">
+            Aucune alerte SOS récente déclenchée.
+          </div>
+        </div>
+      </div>
+    `,
+    confirmLabel: "Fermer le Profil",
+    onConfirm: async () => true,
+  });
+}
 // ---------- Page principale ----------
 export async function renderPelerinsPage() {
   const app = document.getElementById("app");
 
   // On charge les 3 sources en parallèle : pèlerins, groupes, utilisateurs
-  const [pelerins, groupes, utilisateurs] = await Promise.all([
+  const [pelerins, groupes, utilisateurs,hotels,guides] = await Promise.all([
     getPelerins(),
     getGroupes(),
     getUtilisateurs(),
+    getHotels(),
+    getGuides(),
   ]);
 
-  const groupeMap = Object.fromEntries(groupes.map((g) => [g.idGroupe, g.nom]));
+  const groupeMap = Object.fromEntries(groupes.map((g) => [g.idGroupe, g]));
 
   // Jointure : pour chaque pèlerin, on retrouve son nom/sa photo via utilisateurId
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
@@ -331,30 +429,42 @@ export async function renderPelerinsPage() {
             { label: "Groupe", render: (p) => escapeHtml(groupeMap[p.groupeId] || "-") },
             { label: "Statut Visa", render: (p) => escapeHtml(p.statutVisa) },
             { label: "Santé", render: (p) => escapeHtml(p.informationsMedicales || "----") },
-            {
-              label: "Actions",
-              render: (p) => `
-                <div class="flex flex-wrap gap-2">
-                  <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-edit="${escapeHtml(p.idPelerin)}">
-                    <i class="fa-solid fa-pen"></i>
-                  </button>
-                  <button class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-extrabold text-white" data-delete="${escapeHtml(p.idPelerin)}">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              `,
-            },
+{
+  label: "Actions",
+  render: (p) => `
+    <div class="flex flex-wrap gap-2">
+      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-view="${escapeHtml(p.idPelerin)}">
+        <i class="fa-solid fa-eye"></i>
+      </button>
+      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-edit="${escapeHtml(p.idPelerin)}">
+        <i class="fa-solid fa-pen"></i>
+      </button>
+      <button class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-extrabold text-white" data-delete="${escapeHtml(p.idPelerin)}">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  `,
+},
+
           ],
         })}
       </article>
     </section>
   `;
 
-  bindPelerinEvents(pelerins);
+  bindPelerinEvents(pelerins, utilisateurMap, groupeMap, hotels, guides);
 }
 
-function bindPelerinEvents(pelerins) {
+function bindPelerinEvents(pelerins, utilisateurMap, groupeMap, hotels, guides) {
   document.getElementById("addPelerinBtn").addEventListener("click", () => openPelerinForm());
+
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const pelerin = pelerins.find((p) => p.idPelerin === button.dataset.view);
+      if (pelerin) openPelerinDetail(pelerin, utilisateurMap, groupeMap, hotels, guides);
+    });
+  });
+
 
   document.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
