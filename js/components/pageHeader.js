@@ -1,10 +1,9 @@
-
 import { escapeHtml } from "../utils/html.js";
 
 export function pageHeader({ kicker = "Application", title, subtitle, actionLabel = null, actionId = null, actionIcon = "fa-plus" }) {
   const action = actionLabel
     ? `
-      <button id="${escapeHtml(actionId)}" class="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2.5 text-sm font-extrabold text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/20">
+      <button id="${escapeHtml(actionId)}" class="inline-flex items-center gap-2 rounded-2xl bg-[#333D2A] px-4 py-2.5 text-sm font-extrabold text-white transition hover:opacity-90">
         <i class="fa-solid ${escapeHtml(actionIcon)}"></i>
         <span>${escapeHtml(actionLabel)}</span>
       </button>
@@ -12,14 +11,11 @@ export function pageHeader({ kicker = "Application", title, subtitle, actionLabe
     : "";
 
   return `
-    <header class="mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-cyan-800 p-7 text-white shadow-soft sm:p-8">
-      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div class="max-w-3xl">
-          <div class="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-cyan-100 ring-1 ring-white/15">
-            ${escapeHtml(kicker)}
-          </div>
-          <h1 class="text-3xl font-black tracking-tight sm:text-5xl">${escapeHtml(title)}</h1>
-          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">${escapeHtml(subtitle)}</p>
+    <header class="mb-6 overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="font-display text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">${escapeHtml(title)}</h1>
+          <p class="mt-1 text-sm text-slate-500">${escapeHtml(subtitle)}</p>
         </div>
         ${action}
       </div>

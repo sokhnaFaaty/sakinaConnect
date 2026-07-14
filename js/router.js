@@ -55,7 +55,10 @@ async function afficherPage(activePage) {
       </div>
     </div>
   `;
-
+document.querySelectorAll("[data-page]").forEach((button) => {
+  const isActive = button.dataset.page === activePage;
+  button.dataset.active = isActive ? "true" : "false";
+});
   try {
     await route();
   } catch (error) {

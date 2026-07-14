@@ -13,15 +13,15 @@ function getRoot() {
 export function openModal({
   title,
   icon = "fa-circle-info",
-  iconClass = "bg-indigo-100 text-indigo-600",
+  iconClass = "bg-[#F2F2DE] text-[#333D2A]",
   body = "",
   confirmLabel = "Enregistrer",
   confirmIcon = "fa-floppy-disk",
-  confirmClass = "bg-indigo-600 shadow-indigo-200 hover:bg-indigo-700",
+  confirmClass = "bg-[#333D2A] shadow-[#333D2A]/20 hover:opacity-90",
   cancelLabel = "Annuler",
   onConfirm = null,
   onMount = null,
-}) {
+})  {
   closeModal();
 
   const lastFocused = document.activeElement;
@@ -102,17 +102,89 @@ export function openModal({
   return { close };
 }
 
-export function openConfirm({ message, confirmLabel = "Confirmer", onConfirm }) {
-  return openModal({
-    title: "Confirmation",
-    icon: "fa-triangle-exclamation",
-    iconClass: "bg-rose-100 text-rose-600",
-    body: `<p class="text-sm leading-6 text-slate-600">${message}</p>`,
-    confirmLabel,
-    confirmIcon: "fa-check",
-    confirmClass: "bg-rose-600 shadow-rose-200 hover:bg-rose-700",
-    onConfirm,
+// export function openConfirm({ title = "Confirmation", message, confirmLabel = "OUI", cancelLabel = "NON", onConfirm }) {
+//   return openModal({
+//     title,
+//     icon: "fa-triangle-exclamation",
+//     iconClass: "bg-rose-100 text-rose-600",
+//     body: `<p class="text-center text-sm leading-6 text-slate-600">${message}</p>`,
+//     confirmLabel,
+//     cancelLabel,
+//     confirmIcon: "fa-check",
+//     confirmClass: "bg-rose-600 shadow-rose-200 hover:bg-rose-700",
+//     onConfirm,
+//   });
+// }
+export function openConfirm({ title = "Confirmer la suppression", message, confirmLabel = "OUI", cancelLabel = "NON", onConfirm }) {
+  closeModal();
+
+  const lastFocused = document.activeElement;
+
+  const overlay = document.createElement("div");
+  overlay.className = "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+
+  overlay.innerHTML = `
+    <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div class="flex items-center justify-between bg-gradient-to-r from-[#333D2A] to-[#F2F2DE] px-6 py-4">
+        <h2 class="text-lg font-black text-white">${title}</h2>
+        <button type="button" data-modal-close class="flex h-8 w-8 items-center justify-center rounded-lg text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="px-6 py-8 text-center">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+        </div>
+        <p class="text-sm leading-6 text-slate-700">${message}</p>
+      </div>
+
+      <div class="flex justify-center gap-4 px-6 pb-6">
+        <button type="button" data-modal-cancel class="rounded-2xl bg-blue-600 px-8 py-2.5 text-sm font-extrabold text-white transition hover:bg-blue-700">${cancelLabel}</button>
+        <button type="button" data-modal-confirm class="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-8 py-2.5 text-sm font-extrabold text-white transition hover:bg-rose-700">
+          <i class="fa-solid fa-check"></i>
+          <span>${confirmLabel}</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  getRoot().appendChild(overlay);
+
+  function close() {
+    overlay.remove();
+    document.removeEventListener("keydown", onKeydown);
+    activeModal = null;
+    if (lastFocused && document.contains(lastFocused)) {
+      lastFocused.focus();
+    }
+  }
+
+  function onKeydown(event) {
+    if (event.key === "Escape") close();
+  }
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) close();
   });
+
+  overlay.querySelector("[data-modal-close]").addEventListener("click", close);
+  overlay.querySelector("[data-modal-cancel]").addEventListener("click", close);
+
+  overlay.querySelector("[data-modal-confirm]").addEventListener("click", async () => {
+    if (typeof onConfirm === "function") {
+      const result = await onConfirm();
+      if (result === false) return;
+    }
+    close();
+  });
+
+  document.addEventListener("keydown", onKeydown);
+  activeModal = { close };
+
+  return { close };
 }
 
 export function closeModal() {
