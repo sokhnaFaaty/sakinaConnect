@@ -126,3 +126,12 @@ export async function affecterPelerinAuGroupe(idPelerin, groupeId) {
     "Impossible d'affecter le pèlerin au groupe."
   );
 }
+// Retrouve la fiche pèlerin liée au compte utilisateur connecté
+export async function getPelerinByUtilisateurId(utilisateurId) {
+  const pelerins = await apiRequest(
+    `${ENDPOINTS.pelerins}?utilisateurId=${utilisateurId}`,
+    {},
+    "Impossible de charger le profil pèlerin."
+  );
+  return pelerins[0] || null;
+}
