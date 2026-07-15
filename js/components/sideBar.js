@@ -8,7 +8,7 @@ const NAV_LINKS_BY_ROLE = {
   ],
   GUIDE: [
     { page: "mon-groupe", label: "Mon groupe", icon: "fa-users" },
-    { page: "pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
+  { page: "mon-pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
   PELERIN: [
     { page: "dashboard-pelerin", label: "Tableau de Bord", icon: "fa-gauge" },

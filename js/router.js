@@ -10,6 +10,8 @@ import { renderPelerinsPage } from "./pages/pelerinsPage.js";
 import { renderPoleUrgencePelerinPage } from "./pages/poleUrgencePelerinPage.js";
 import { renderPoleUrgencePage } from "./pages/poleUrgencePage.js";
 import { renderDashboardPelerinPage } from "./pages/dashboardPelerinPage.js";
+import { renderMonPoleUrgencePage } from "./pages/monPoleUrgencePage.js";
+
 
 const routes = {
   accueil: renderAccueilPage,
@@ -19,6 +21,7 @@ const routes = {
   "mon-groupe": renderMonGroupePage,
    "dashboard-pelerin": renderDashboardPelerinPage,
   "pole-urgence": renderPoleUrgencePage,
+    "mon-pole-urgence": renderMonPoleUrgencePage, 
     "pole-urgence-pelerin": renderPoleUrgencePelerinPage,
 
 };
@@ -30,7 +33,8 @@ const ROUTE_PERMISSIONS = {
   pelerins: [ROLES.ADMIN],
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],
-  "pole-urgence": [ROLES.ADMIN, ROLES.GUIDE],
+  "pole-urgence": [ROLES.ADMIN],
+    "mon-pole-urgence": renderMonPoleUrgencePage, 
     "pole-urgence-pelerin": [ROLES.PELERIN],
 
 };
