@@ -11,7 +11,7 @@ import { renderPoleUrgencePelerinPage } from "./pages/poleUrgencePelerinPage.js"
 import { renderPoleUrgencePage } from "./pages/poleUrgencePage.js";
 import { renderDashboardPelerinPage } from "./pages/dashboardPelerinPage.js";
 import { renderMonPoleUrgencePage } from "./pages/monPoleUrgencePage.js";
-
+import { renderItinerairePage } from "./pages/itinerairePage.js";
 
 const routes = {
   accueil: renderAccueilPage,
@@ -23,6 +23,7 @@ const routes = {
   "pole-urgence": renderPoleUrgencePage,
     "mon-pole-urgence": renderMonPoleUrgencePage, 
     "pole-urgence-pelerin": renderPoleUrgencePelerinPage,
+      "itineraire": renderItinerairePage,
 
 };
 
@@ -36,6 +37,9 @@ const ROUTE_PERMISSIONS = {
   "pole-urgence": [ROLES.ADMIN],
     "mon-pole-urgence": renderMonPoleUrgencePage, 
     "pole-urgence-pelerin": [ROLES.PELERIN],
+      "itineraire": [ROLES.GUIDE,ROLES.ADMIN],
+
+
 
 };
 
