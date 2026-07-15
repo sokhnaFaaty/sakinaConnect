@@ -13,13 +13,14 @@ export function renderNavbar() {
   const roleLabel = ROLE_LABELS[role] || role;
 
   return `
-    <header class="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between bg-[#333D2A] px-4 lg:left-72">
-    <div class="flex items-center gap-3">
-  <button id="sidebarToggle" ...>...</button>
-  <i class="fa-solid fa-moon text-[#BC7B3B]"></i>
-  <span class="font-display text-base font-black text-white">Sakina Connect</span>
-</div>
-   
+    <header class="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between bg-[#333D2A] px-4">
+      <div class="flex items-center gap-3">
+        <button id="sidebarToggle" class="flex h-10 w-10 items-center justify-center rounded-xl text-white transition hover:bg-white/10 lg:hidden" aria-label="Ouvrir le menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <i class="fa-solid fa-moon text-[#BC7B3B]"></i>
+        <span class="font-display text-base font-black text-white">Sakina Connect</span>
+      </div>
 
       <div class="flex items-center gap-3">
         <div class="text-right">

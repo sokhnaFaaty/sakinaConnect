@@ -4,11 +4,16 @@ const NAV_LINKS_BY_ROLE = {
   ADMIN: [
     { page: "groupes", label: "Liste des Groupes", icon: "fa-people-group" },
     { page: "pelerins", label: "Liste des Pèlerins", icon: "fa-users" },
+    { page: "pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
   GUIDE: [
     { page: "mon-groupe", label: "Mon groupe", icon: "fa-users" },
+  { page: "mon-pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
-  PELERIN: [],
+  PELERIN: [
+    { page: "dashboard-pelerin", label: "Tableau de Bord", icon: "fa-gauge" },
+    { page: "pole-urgence-pelerin", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
+  ],
   PROCHE: [],
 };
 
@@ -24,7 +29,7 @@ export function renderSidebar() {
   `).join("");
 
   return `
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-72 -translate-x-full border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0">
+    <aside id="sidebar" class="fixed inset-x-0 top-16 bottom-0 left-0 z-40 w-72 -translate-x-full border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0">
       <p class="px-5 pb-2 pt-6 text-xs font-extrabold uppercase tracking-widest text-slate-400">Vues système :</p>
 
       <nav class="grid gap-1 px-4 pb-4" aria-label="Navigation principale">

@@ -7,6 +7,11 @@ import { renderLoginPage } from "./pages/loginPage.js";
 import { renderMonGroupePage } from "./pages/monGroupePage.js";
 import { renderGroupesPage } from "./pages/groupesPage.js";
 import { renderPelerinsPage } from "./pages/pelerinsPage.js";
+import { renderPoleUrgencePelerinPage } from "./pages/poleUrgencePelerinPage.js";
+import { renderPoleUrgencePage } from "./pages/poleUrgencePage.js";
+import { renderDashboardPelerinPage } from "./pages/dashboardPelerinPage.js";
+import { renderMonPoleUrgencePage } from "./pages/monPoleUrgencePage.js";
+
 
 const routes = {
   accueil: renderAccueilPage,
@@ -14,6 +19,11 @@ const routes = {
   groupes: renderGroupesPage,
   pelerins: renderPelerinsPage,
   "mon-groupe": renderMonGroupePage,
+   "dashboard-pelerin": renderDashboardPelerinPage,
+  "pole-urgence": renderPoleUrgencePage,
+    "mon-pole-urgence": renderMonPoleUrgencePage, 
+    "pole-urgence-pelerin": renderPoleUrgencePelerinPage,
+
 };
 
 const PUBLIC_PAGES = ["accueil", "login"];
@@ -22,6 +32,11 @@ const ROUTE_PERMISSIONS = {
   groupes: [ROLES.ADMIN],
   pelerins: [ROLES.ADMIN],
   "mon-groupe": [ROLES.GUIDE],
+  "dashboard-pelerin": [ROLES.PELERIN],
+  "pole-urgence": [ROLES.ADMIN],
+    "mon-pole-urgence": renderMonPoleUrgencePage, 
+    "pole-urgence-pelerin": [ROLES.PELERIN],
+
 };
 
 function canAccess(page, role) {
