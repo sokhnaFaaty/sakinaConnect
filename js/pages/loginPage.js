@@ -18,7 +18,7 @@ export function renderLoginPage() {
   app.className = "";
   app.innerHTML = `
     <div class="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
-         style="background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('./assets/login-bg.jpg');">
+         style="background-image:url('./assets/CouvertureLogin.jpg');">
 
       <div class="w-full max-w-md overflow-hidden rounded-2xl bg-[#F2F2DE] shadow-2xl">
 
