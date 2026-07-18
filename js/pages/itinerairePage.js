@@ -223,20 +223,20 @@ function rafraichirAffichage() {
 
   container.querySelectorAll("[data-modifier]").forEach((bouton) => {
     bouton.addEventListener("click", () => {
-      const evenement = etatPage.planning.find((e) => e.idPlanning === bouton.dataset.modifier);
+      const evenement = etatPage.planning.find((e) => e.id === bouton.dataset.modifier);
       if (evenement) ouvrirFormulaireEvenement(evenement);
     });
   });
 
   container.querySelectorAll("[data-supprimer]").forEach((bouton) => {
     bouton.addEventListener("click", () => {
-      const idPlanning = bouton.dataset.supprimer;
+      const id = bouton.dataset.supprimer;
       openConfirm({
         title: "Confirmer la suppression",
         message: "Êtes-vous sûr de vouloir supprimer cet événement ?",
         onConfirm: async () => {
           try {
-            await deletePlanningEvent(idPlanning);
+            await deletePlanningEvent(id);
             showToast("Événement supprimé.");
             etatPage.planning = await getPlanningDuGroupe(etatPage.groupeId);
             rafraichirAffichage();
@@ -250,7 +250,7 @@ function rafraichirAffichage() {
 
   container.querySelectorAll("[data-voir-carte]").forEach((bouton) => {
     bouton.addEventListener("click", () => {
-      const evenement = etatPage.planning.find((e) => e.idPlanning === bouton.dataset.voirCarte);
+      const evenement = etatPage.planning.find((e) => e.id === bouton.dataset.voirCarte);
       if (evenement && evenement.latitude && evenement.longitude) {
         centrerCarteSur(evenement.latitude, evenement.longitude, evenement.titre);
       } else {
@@ -276,7 +276,7 @@ function carteEvenement(evenement, categorieMap) {
           <span class="text-xs font-bold text-slate-400">${escapeHtml(evenement.heure)}</span>
           <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">${escapeHtml(categorieLabel)}</span>
         </div>
-        <button data-voir-carte="${escapeHtml(evenement.idPlanning)}" class="flex items-center gap-1 text-xs font-bold text-[#333D2A] hover:underline">
+        <button data-voir-carte="${escapeHtml(evenement.id)}" class="flex items-center gap-1 text-xs font-bold text-[#333D2A] hover:underline">
           <i class="fa-solid fa-location-dot"></i> ${escapeHtml(evenement.lieu)}
         </button>
       </div>
@@ -291,8 +291,8 @@ function carteEvenement(evenement, categorieMap) {
       <p class="mt-1 text-sm text-slate-500">${escapeHtml(evenement.description)}</p>
 
       <div class="mt-3 flex gap-4 text-xs font-extrabold">
-        <button data-modifier="${escapeHtml(evenement.idPlanning)}" class="text-amber-600 hover:underline">Modifier</button>
-        <button data-supprimer="${escapeHtml(evenement.idPlanning)}" class="text-rose-600 hover:underline">Supprimer</button>
+        <button data-modifier="${escapeHtml(evenement.id)}" class="text-amber-600 hover:underline">Modifier</button>
+        <button data-supprimer="${escapeHtml(evenement.id)}" class="text-rose-600 hover:underline">Supprimer</button>
       </div>
     </div>
   `;
@@ -434,7 +434,7 @@ function ouvrirFormulaireEvenement(evenement) {
 
       try {
         if (evenement) {
-          await updatePlanningEvent(evenement.idPlanning, { date, heure, titre, lieu, categorieId, etapeGuide, description });
+          await updatePlanningEvent(evenement.id, { date, heure, titre, lieu, categorieId, etapeGuide, description });
           showToast("Événement modifié avec succès.");
         } else {
           await createPlanningEvent({ date, heure, titre, lieu, categorieId, etapeGuide, description, groupeId: etatPage.groupeId });

@@ -426,7 +426,7 @@ export async function renderPelerinsPage() {
               },
             },
             { label: "N Passeport", render: (p) => escapeHtml(p.numeroPasseport) },
-            { label: "Groupe", render: (p) => escapeHtml(groupeMap[p.groupeId] || "-") },
+            { label: "Groupe", render: (p) => escapeHtml(groupeMap[p.groupeId]?.nom || "-") },
             { label: "Statut Visa", render: (p) => escapeHtml(p.statutVisa) },
             { label: "Santé", render: (p) => escapeHtml(p.informationsMedicales || "----") },
 {
