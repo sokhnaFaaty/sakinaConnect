@@ -34,7 +34,7 @@ const ROUTE_PERMISSIONS = {
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],
   "pole-urgence": [ROLES.ADMIN],
-    "mon-pole-urgence": renderMonPoleUrgencePage, 
+  "mon-pole-urgence": [ROLES.GUIDE],
     "pole-urgence-pelerin": [ROLES.PELERIN],
 
 };
