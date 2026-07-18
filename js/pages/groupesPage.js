@@ -17,6 +17,7 @@ import { getGuides } from "../services/guideService.js";
 import { getHotels } from "../services/hotelService.js";
 
 // ---------- Corps du formulaire groupe ----------
+  let currentView = "table";
 function groupeFormBody(groupe, guides, hotels, utilisateurMap) {
   const optionsGuides = guides
     .map((g) => {

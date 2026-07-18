@@ -4,10 +4,12 @@ const NAV_LINKS_BY_ROLE = {
   ADMIN: [
     { page: "groupes", label: "Liste des Groupes", icon: "fa-people-group" },
     { page: "pelerins", label: "Liste des Pèlerins", icon: "fa-users" },
+      { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
     { page: "pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
   GUIDE: [
     { page: "mon-groupe", label: "Mon groupe", icon: "fa-users" },
+      { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
   { page: "mon-pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
   PELERIN: [
