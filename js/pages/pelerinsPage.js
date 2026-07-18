@@ -23,7 +23,7 @@ function pelerinFormBody(pelerin = null, groupes = []) {
   const isEdit = pelerin !== null;
 
   const optionsGroupes = groupes
-    .map((g) => `<option value="${escapeHtml(g.idGroupe)}" ${pelerin?.groupeId === g.idGroupe ? "selected" : ""}>${escapeHtml(g.nom)}</option>`)
+    .map((g) => `<option value="${escapeHtml(g.id)}" ${pelerin?.groupeId === g.id ? "selected" : ""}>${escapeHtml(g.nom)}</option>`)
     .join("");
 
   return `
@@ -231,7 +231,7 @@ async function openPelerinForm(pelerin = null) {
 
       try {
         if (pelerin) {
-          await updatePelerin(pelerin.idPelerin, {
+          await updatePelerin(pelerin.id, {
             numeroPasseport,
             statutVisa,
             groupeId,
@@ -257,7 +257,7 @@ async function openPelerinForm(pelerin = null) {
           if (procheData) {
             const { motDePasseGenere } = await createProche({
               ...procheData,
-              pelerinId: nouveauPelerin.idPelerin,
+              pelerinId: nouveauPelerin.id,
             });
 
             setTimeout(() => {
@@ -291,7 +291,7 @@ export async function openPelerinDetail(pelerin, utilisateurMap, groupeMap, hote
 
   // Le proche associé, s'il existe, vient du service procheService (à récupérer avant l'appel)
   const proches = await getProches();
-  const procheAssocie = proches.find((pr) => pr.pelerinId === pelerin.idPelerin);
+  const procheAssocie = proches.find((pr) => pr.pelerinId === pelerin.id);
   const procheUtilisateur = procheAssocie ? utilisateurMap[procheAssocie.utilisateurId] : null;
 
   const visaBadge = pelerin.statutVisa === "APPROUVE"
@@ -308,7 +308,7 @@ export async function openPelerinDetail(pelerin, utilisateurMap, groupeMap, hote
         <div>
           <div class="flex items-center gap-2">
             <h2 class="text-lg font-black text-slate-950">${escapeHtml(utilisateur?.nomComplet || "-")}</h2>
-            <span class="rounded-full bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">${escapeHtml(pelerin.idPelerin.slice(0, 5).toUpperCase())}</span>
+            <span class="rounded-full bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">${escapeHtml(pelerin.id.slice(0, 5).toUpperCase())}</span>
           </div>
           <p class="text-sm text-slate-500">Passeport : ${escapeHtml(pelerin.numeroPasseport)}</p>
           <p class="mt-1 text-sm text-slate-500">Statut du Visa : ${visaBadge}</p>
@@ -388,7 +388,7 @@ export async function renderPelerinsPage() {
     getGuides(),
   ]);
 
-  const groupeMap = Object.fromEntries(groupes.map((g) => [g.idGroupe, g]));
+  const groupeMap = Object.fromEntries(groupes.map((g) => [g.id, g]));
 
   // Jointure : pour chaque pèlerin, on retrouve son nom/sa photo via utilisateurId
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
@@ -433,13 +433,13 @@ export async function renderPelerinsPage() {
   label: "Actions",
   render: (p) => `
     <div class="flex flex-wrap gap-2">
-      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-view="${escapeHtml(p.idPelerin)}">
+      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-view="${escapeHtml(p.id)}">
         <i class="fa-solid fa-eye"></i>
       </button>
-      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-edit="${escapeHtml(p.idPelerin)}">
+      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-edit="${escapeHtml(p.id)}">
         <i class="fa-solid fa-pen"></i>
       </button>
-      <button class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-extrabold text-white" data-delete="${escapeHtml(p.idPelerin)}">
+      <button class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-extrabold text-white" data-delete="${escapeHtml(p.id)}">
         <i class="fa-solid fa-trash"></i>
       </button>
     </div>
@@ -460,7 +460,7 @@ function bindPelerinEvents(pelerins, utilisateurMap, groupeMap, hotels, guides) 
 
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
-      const pelerin = pelerins.find((p) => p.idPelerin === button.dataset.view);
+      const pelerin = pelerins.find((p) => p.id === button.dataset.view);
       if (pelerin) openPelerinDetail(pelerin, utilisateurMap, groupeMap, hotels, guides);
     });
   });
@@ -468,7 +468,7 @@ function bindPelerinEvents(pelerins, utilisateurMap, groupeMap, hotels, guides) 
 
   document.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
-      const pelerin = pelerins.find((p) => p.idPelerin === button.dataset.edit);
+      const pelerin = pelerins.find((p) => p.id === button.dataset.edit);
       if (pelerin) openPelerinForm(pelerin);
     });
   });

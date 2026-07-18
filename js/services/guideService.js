@@ -14,9 +14,9 @@ export async function getGuideByUtilisateurId(utilisateurId) {
   return guides[0] || null;
 }
 
-export async function getGroupeDuGuide(idGuide) {
+export async function getGroupeDuGuide(id) {
   const groupes = await apiRequest(
-    `${ENDPOINTS.groupes}?guideId=${idGuide}`,
+    `${ENDPOINTS.groupes}?guideId=${id}`,
     {},
     "Impossible de charger le groupe du guide."
   );
