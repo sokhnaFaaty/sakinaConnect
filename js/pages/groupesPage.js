@@ -21,14 +21,14 @@ import { getHotels } from "../services/hotelService.js";
 function groupeFormBody(groupe, guides, hotels, utilisateurMap) {
   const optionsGuides = guides
     .map((g) => {
-      const nom = utilisateurMap[g.utilisateurId]?.nomComplet || g.idGuide;
-      return `<option value="${escapeHtml(g.idGuide)}" ${groupe?.guideId === g.idGuide ? "selected" : ""}>${escapeHtml(nom)}</option>`;
+      const nom = utilisateurMap[g.utilisateurId]?.nomComplet || g.id;
+      return `<option value="${escapeHtml(g.id)}" ${groupe?.guideId === g.id ? "selected" : ""}>${escapeHtml(nom)}</option>`;
     })
     .join("");
 
   const optionsHotels = (selectedId) =>
     hotels
-      .map((h) => `<option value="${escapeHtml(h.idHotel)}" ${selectedId === h.idHotel ? "selected" : ""}>${escapeHtml(h.nom)}</option>`)
+      .map((h) => `<option value="${escapeHtml(h.id)}" ${selectedId === h.id ? "selected" : ""}>${escapeHtml(h.nom)}</option>`)
       .join("");
 
   return `
@@ -113,7 +113,7 @@ function openGroupeForm(groupe, guides, hotels, utilisateurMap) {
 
       try {
         if (groupe) {
-          await updateGroupe(groupe.idGroupe, { nom, guideId, hotelMecqueId, hotelMedineId, dateDepart, dateRetour });
+          await updateGroupe(groupe.id, { nom, guideId, hotelMecqueId, hotelMedineId, dateDepart, dateRetour });
           showToast("Groupe modifié avec succès.");
         } else {
           await createGroupe({ nom, guideId, hotelMecqueId, hotelMedineId, dateDepart, dateRetour });
@@ -131,11 +131,11 @@ function openGroupeForm(groupe, guides, hotels, utilisateurMap) {
 
 // ---------- Modale : liste en lecture seule des pèlerins du groupe ----------
 function groupeDetailBody(groupe, guides, hotels, pelerins, utilisateurMap) {
-  const guide = guides.find((g) => g.idGuide === groupe.guideId);
+  const guide = guides.find((g) => g.id === groupe.guideId);
   const guideNom = guide ? utilisateurMap[guide.utilisateurId]?.nomComplet : "-";
-  const hotelMecque = hotels.find((h) => h.idHotel === groupe.hotelMecqueId)?.nom || "-";
-  const hotelMedine = hotels.find((h) => h.idHotel === groupe.hotelMedineId)?.nom || "-";
-  const pelerinsDuGroupe = pelerins.filter((p) => p.groupeId === groupe.idGroupe);
+  const hotelMecque = hotels.find((h) => h.id === groupe.hotelMecqueId)?.nom || "-";
+  const hotelMedine = hotels.find((h) => h.id === groupe.hotelMedineId)?.nom || "-";
+  const pelerinsDuGroupe = pelerins.filter((p) => p.groupeId === groupe.id);
 
   const membres = pelerinsDuGroupe
     .map((p) => {
@@ -143,7 +143,7 @@ function groupeDetailBody(groupe, guides, hotels, pelerins, utilisateurMap) {
       return `
         <div class="flex items-center justify-between border-b border-slate-100 py-2 text-sm last:border-0">
           <span class="font-bold text-slate-800">${escapeHtml(nom)}</span>
-          <span class="text-xs text-slate-500">Passeport : ${escapeHtml(p.numeroPasseport)} &nbsp; ID : ${escapeHtml(p.idPelerin.slice(0, 6).toUpperCase())}</span>
+          <span class="text-xs text-slate-500">Passeport : ${escapeHtml(p.numeroPasseport)} &nbsp; ID : ${escapeHtml(p.id.slice(0, 6).toUpperCase())}</span>
         </div>
       `;
     })
@@ -156,7 +156,7 @@ function groupeDetailBody(groupe, guides, hotels, pelerins, utilisateurMap) {
   <i class="fa-solid fa-user text-[#07744E]"></i> Informations générales
 </p>
         <dl class="grid gap-2 text-sm">
-          <div class="flex justify-between"><dt class="text-slate-500">ID du groupe :</dt><dd class="font-semibold">${escapeHtml(groupe.idGroupe.slice(0, 6).toUpperCase())}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">ID du groupe :</dt><dd class="font-semibold">${escapeHtml(groupe.id.slice(0, 6).toUpperCase())}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">Nom :</dt><dd class="font-semibold">${escapeHtml(groupe.nom)}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">Guide responsable :</dt><dd class="font-semibold">${escapeHtml(guideNom)}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">Pèlerins inscrits :</dt><dd class="font-semibold">${pelerinsDuGroupe.length}</dd></div>
@@ -210,7 +210,7 @@ export async function renderGroupesPage() {
   ]);
 
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
-  const hotelMap = Object.fromEntries(hotels.map((h) => [h.idHotel, h.nom]));
+  const hotelMap = Object.fromEntries(hotels.map((h) => [h.id, h.nom]));
 
   // Compte le nombre de pèlerins par groupe (calculé localement)
   const nbPelerinsParGroupe = {};
@@ -236,28 +236,28 @@ ${renderTable({
   rows: groupes,
   emptyMessage: "Aucun groupe enregistré.",
   columns: [
-    { label: "ID", render: (g) => `<span class="text-xs font-bold text-slate-400">${escapeHtml(g.idGroupe.slice(0, 6).toUpperCase())}</span>` },
+    { label: "ID", render: (g) => `<span class="text-xs font-bold text-slate-400">${escapeHtml(g.id.slice(0, 6).toUpperCase())}</span>` },
     { label: "Nom du groupe", render: (g) => `<strong class="font-bold text-slate-950">${escapeHtml(g.nom)}</strong>` },
     {
       label: "Guide responsable",
       render: (g) => {
-        const guide = guides.find((guide) => guide.idGuide === g.guideId);
+        const guide = guides.find((guide) => guide.id === g.guideId);
         const nom = guide ? utilisateurMap[guide.utilisateurId]?.nomComplet : "-";
         return escapeHtml(nom || "-");
       },
     },
-    { label: "Nombre de pèlerins", render: (g) => `${nbPelerinsParGroupe[g.idGroupe] || 0} pèlerins` },
+    { label: "Nombre de pèlerins", render: (g) => `${nbPelerinsParGroupe[g.id] || 0} pèlerins` },
     {
       label: "Actions",
       render: (g) => `
         <div class="flex items-center gap-3 text-base">
-          <button class="text-slate-500 hover:text-slate-800" data-view-pelerins="${escapeHtml(g.idGroupe)}" title="Voir">
+          <button class="text-slate-500 hover:text-slate-800" data-view-pelerins="${escapeHtml(g.id)}" title="Voir">
             <i class="fa-solid fa-eye"></i>
           </button>
-          <button class="text-indigo-500 hover:text-indigo-700" data-edit="${escapeHtml(g.idGroupe)}" title="Modifier">
+          <button class="text-indigo-500 hover:text-indigo-700" data-edit="${escapeHtml(g.id)}" title="Modifier">
             <i class="fa-solid fa-pen"></i>
           </button>
-          <button class="text-rose-500 hover:text-rose-700" data-delete="${escapeHtml(g.idGroupe)}" title="Supprimer">
+          <button class="text-rose-500 hover:text-rose-700" data-delete="${escapeHtml(g.id)}" title="Supprimer">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
@@ -276,7 +276,7 @@ function bindGroupeEvents(groupes, guides, hotels, pelerins, utilisateurMap) {
 
   document.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
-      const groupe = groupes.find((g) => g.idGroupe === button.dataset.edit);
+      const groupe = groupes.find((g) => g.id === button.dataset.edit);
       if (groupe) openGroupeForm(groupe, guides, hotels, utilisateurMap);
     });
   });
@@ -284,7 +284,7 @@ function bindGroupeEvents(groupes, guides, hotels, pelerins, utilisateurMap) {
   
   document.querySelectorAll("[data-view-pelerins]").forEach((button) => {
   button.addEventListener("click", () => {
-    const groupe = groupes.find((g) => g.idGroupe === button.dataset.viewPelerins);
+    const groupe = groupes.find((g) => g.id === button.dataset.viewPelerins);
     if (groupe) openGroupeDetail(groupe, guides, hotels, pelerins, utilisateurMap);
   });
 });
@@ -292,7 +292,7 @@ function bindGroupeEvents(groupes, guides, hotels, pelerins, utilisateurMap) {
 document.querySelectorAll("[data-delete]").forEach((button) => {
   button.addEventListener("click", () => {
     const id = button.dataset.delete;
-    const groupe = groupes.find((g) => g.idGroupe === id);
+    const groupe = groupes.find((g) => g.id === id);
     openConfirm({
       title: "Confirmer la suppression",
       message: `Êtes-vous sûr de vouloir supprimer le groupe<br/><strong>${escapeHtml(groupe?.nom || "")}</strong> ?`,

@@ -6,7 +6,7 @@ import { generateTempPassword } from "../utils/password.js";
 
 function normalizeProche(data) {
   return {
-    idProche: data.idProche,
+    id: data.id,
     utilisateurId: data.utilisateurId,
     pelerinId: data.pelerinId,
     lienParente: String(data.lienParente).trim(),
@@ -52,7 +52,7 @@ export async function createProche(data) {
 
   // 3. Créer la fiche proche, liée au pèlerin
   const proche = normalizeProche({
-    idProche: createId("proc"),
+    id: createId("proc"),
     utilisateurId,
     pelerinId: data.pelerinId,
     lienParente: data.lienParente,
@@ -68,9 +68,9 @@ export async function createProche(data) {
   return { proche: procheCree, motDePasseGenere };
 }
 
-export async function deleteProche(idProche) {
+export async function deleteProche(id) {
   return apiRequest(
-    `${ENDPOINTS.proches}/${idProche}`,
+    `${ENDPOINTS.proches}/${id}`,
     { method: "DELETE" },
     "Impossible de supprimer le proche."
   );

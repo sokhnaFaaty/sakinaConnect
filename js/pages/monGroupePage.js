@@ -27,9 +27,9 @@ export async function renderMonGroupePage() {
   }
 
   const [pelerins, utilisateurs,planning,hotels] = await Promise.all([
-    getPelerinsDuGroupe(groupe.idGroupe),
+    getPelerinsDuGroupe(groupe.id),
     getUtilisateurs(),
-      getPlanningDuGroupe(groupe.idGroupe),
+      getPlanningDuGroupe(groupe.id),
   getHotels(),
 
   ]);
@@ -94,7 +94,7 @@ export async function renderMonGroupePage() {
             { label: "Nom Complet", render: (p) => escapeHtml(utilisateurMap[p.utilisateurId]?.nomComplet || "—") },
             { label: "Numéro Visa", render: (p) => escapeHtml(p.numeroPasseport) },
             { label: "Statut Visa", render: (p) => escapeHtml(p.statutVisa) },
-            { label: "Fiche", render: (p) => `<button data-view-pelerin="${escapeHtml(p.idPelerin)}" class="font-semibold text-[#333D2A] hover:underline">Détails</button>` },
+            { label: "Fiche", render: (p) => `<button data-view-pelerin="${escapeHtml(p.id)}" class="font-semibold text-[#333D2A] hover:underline">Détails</button>` },
           ],
         })}
       </article>
@@ -112,10 +112,10 @@ export async function renderMonGroupePage() {
 
 renderPlanningPanel(planning);
 
-const groupeMapSimple = { [groupe.idGroupe]: groupe };
+const groupeMapSimple = { [groupe.id]: groupe };
 document.querySelectorAll("[data-view-pelerin]").forEach((button) => {
   button.addEventListener("click", () => {
-    const pelerin = pelerins.find((p) => p.idPelerin === button.dataset.viewPelerin);
+    const pelerin = pelerins.find((p) => p.id === button.dataset.viewPelerin);
     if (pelerin) openPelerinDetail(pelerin, utilisateurMap, groupeMapSimple, hotels, [guide]);
   });
 });
@@ -140,7 +140,7 @@ function renderPlanningPanel(planning) {
 
   listEl.querySelectorAll("[data-planning-id]").forEach((card) => {
     card.addEventListener("click", () => {
-      const evenement = planning.find((e) => e.idPlanning === card.dataset.planningId);
+      const evenement = planning.find((e) => e.id === card.dataset.planningId);
       if (evenement) openPlanningDetail(evenement);
     });
   });
@@ -164,7 +164,7 @@ function renderPlanningPanel(planning) {
 
 function planningCard(evenement, jourNumero) {
   return `
-    <div data-planning-id="${escapeHtml(evenement.idPlanning)}" class="cursor-pointer rounded-2xl border border-slate-100 bg-[#F2F2DE]/50 p-4 transition hover:bg-[#F2F2DE]">
+    <div data-planning-id="${escapeHtml(evenement.id)}" class="cursor-pointer rounded-2xl border border-slate-100 bg-[#F2F2DE]/50 p-4 transition hover:bg-[#F2F2DE]">
       <span class="mb-2 inline-block rounded-full bg-[#333D2A] px-2.5 py-0.5 text-[10px] font-black uppercase text-white">Jour ${jourNumero}</span>
       <h3 class="text-sm font-black text-slate-900">${escapeHtml(evenement.titre)}</h3>
       <p class="mt-1 line-clamp-2 text-xs text-slate-500">${escapeHtml(evenement.description)}</p>

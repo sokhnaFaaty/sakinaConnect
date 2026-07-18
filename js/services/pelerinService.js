@@ -7,7 +7,7 @@ import { generateTempPassword } from "../utils/password.js";
 // Uniformise la forme d'un pèlerin avant de l'envoyer au serveur
 function normalizePelerin(data) {
   return {
-    idPelerin: data.idPelerin,
+    id: data.id,
     utilisateurId: data.utilisateurId,
     numeroPasseport: String(data.numeroPasseport).trim(),
     statutVisa: data.statutVisa,
@@ -35,7 +35,7 @@ export async function getPelerinsDuGroupe(groupeId) {
 /**
  * Crée le compte utilisateur (rôle PELERIN) ET la fiche pèlerin en même temps
  * @param {Object} data - { nomComplet, numeroPasseport, statutVisa, groupeId, informationsMedicales, contactUrgenceNom, contactUrgenceTelephone }
- * @returns {Object} - le pèlerin créé (avec idPelerin, utilisateurId, etc.)
+ * @returns {Object} - le pèlerin créé (avec id, utilisateurId, etc.)
  */
 export async function createPelerin(data) {
   required(data.nomComplet, "Le nom complet du pèlerin est obligatoire.");
@@ -69,7 +69,7 @@ export async function createPelerin(data) {
 
   // 3. Créer la fiche pèlerin, liée à ce compte utilisateur
   const pelerin = normalizePelerin({
-    idPelerin: createId("pel"),
+    id: createId("pel"),
     utilisateurId,
     ...data,
   });
@@ -84,14 +84,14 @@ export async function createPelerin(data) {
   return { ...pelerinCree, motDePasseGenere };
 }
 
-export async function updatePelerin(idPelerin, data) {
+export async function updatePelerin(id, data) {
   required(data.numeroPasseport, "Le numéro de passeport est obligatoire.");
   required(data.statutVisa, "Le statut du visa est obligatoire.");
   required(data.contactUrgenceNom, "Le nom du contact d'urgence est obligatoire.");
   required(data.contactUrgenceTelephone, "Le téléphone du contact d'urgence est obligatoire.");
 
   return apiRequest(
-    `${ENDPOINTS.pelerins}/${idPelerin}`,
+    `${ENDPOINTS.pelerins}/${id}`,
     {
       method: "PATCH",
       body: JSON.stringify({
@@ -107,18 +107,18 @@ export async function updatePelerin(idPelerin, data) {
   );
 }
 
-export async function deletePelerin(idPelerin) {
+export async function deletePelerin(id) {
   return apiRequest(
-    `${ENDPOINTS.pelerins}/${idPelerin}`,
+    `${ENDPOINTS.pelerins}/${id}`,
     { method: "DELETE" },
     "Impossible de supprimer le pèlerin."
   );
 }
 
 // Affecte (ou retire) un pèlerin à un groupe précis, depuis la fiche du groupe
-export async function affecterPelerinAuGroupe(idPelerin, groupeId) {
+export async function affecterPelerinAuGroupe(id, groupeId) {
   return apiRequest(
-    `${ENDPOINTS.pelerins}/${idPelerin}`,
+    `${ENDPOINTS.pelerins}/${id}`,
     {
       method: "PATCH",
       body: JSON.stringify({ groupeId }),
