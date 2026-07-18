@@ -16,7 +16,7 @@ export async function renderMonPoleUrgencePage() {
     return;
   }
 
-  const groupe = await getGroupeDuGuide(guide.idGuide);
+  const groupe = await getGroupeDuGuide(guide.id);
   if (!groupe) {
     app.innerHTML = `<section class="rounded-[2rem] border border-slate-200 bg-white p-8 text-center"><p class="text-sm font-semibold text-slate-500">Aucun groupe ne t'a encore été assigné.</p></section>`;
     return;
@@ -33,7 +33,7 @@ export async function renderMonPoleUrgencePage() {
     </section>
   `;
 
-  await chargerEtAfficher(groupe.idGroupe);
+  await chargerEtAfficher(groupe.id);
 }
 
 async function chargerEtAfficher(groupeId) {
@@ -43,8 +43,8 @@ async function chargerEtAfficher(groupeId) {
     getUtilisateurs(),
   ]);
 
-  const pelerinIdsDuGroupe = pelerinsDuGroupe.map((p) => p.idPelerin);
-  const pelerinMap = Object.fromEntries(pelerinsDuGroupe.map((p) => [p.idPelerin, p]));
+  const pelerinIdsDuGroupe = pelerinsDuGroupe.map((p) => p.id);
+  const pelerinMap = Object.fromEntries(pelerinsDuGroupe.map((p) => [p.id, p]));
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
   const nomResolver = (pelerinId) => utilisateurMap[pelerinMap[pelerinId]?.utilisateurId]?.nomComplet || "Pèlerin inconnu";
 

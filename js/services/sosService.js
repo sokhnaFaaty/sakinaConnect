@@ -25,7 +25,7 @@ export async function declencherSos({ pelerinId, guideId, commentaire }) {
       async (position) => {
         try {
           const sos = {
-            idSOS: createId("sos"),
+            id: createId("sos"),
             pelerinId,
             guideId,
             latitude: position.coords.latitude,
@@ -51,9 +51,9 @@ export async function declencherSos({ pelerinId, guideId, commentaire }) {
 }
 
 // Marque un SOS comme résolu — Guide ou Admin uniquement (jamais le pèlerin)
-export async function marquerSosResolu(idSOS) {
+export async function marquerSosResolu(id) {
   return apiRequest(
-    `${ENDPOINTS.sos}/${idSOS}`,
+    `${ENDPOINTS.sos}/${id}`,
     { method: "PATCH", body: JSON.stringify({ statut: "RESOLU" }) },
     "Impossible de mettre à jour l'alerte SOS."
   );

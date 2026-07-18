@@ -20,7 +20,7 @@ export async function renderMonGroupePage() {
     return;
   }
 
-  const groupe = await getGroupeDuGuide(guide.idGuide);
+  const groupe = await getGroupeDuGuide(guide.id);
   if (!groupe) {
     app.innerHTML = `<section class="rounded-[2rem] border border-slate-200 bg-white p-8 text-center"><p class="text-sm font-semibold text-slate-500">Aucun groupe ne t'a encore été assigné.</p></section>`;
     return;

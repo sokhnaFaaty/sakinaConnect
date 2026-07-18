@@ -63,7 +63,7 @@ async function chargerEtAfficher() {
     getUtilisateurs(),
   ]);
 
-  const pelerinMap = Object.fromEntries(pelerins.map((p) => [p.idPelerin, p]));
+  const pelerinMap = Object.fromEntries(pelerins.map((p) => [p.id, p]));
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
   const nomResolver = (pelerinId) => utilisateurMap[pelerinMap[pelerinId]?.utilisateurId]?.nomComplet || "Pèlerin inconnu";
 
@@ -77,7 +77,7 @@ async function chargerEtAfficher() {
     ? sosResolus.map((s) => `
         <div class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
           <div class="mb-1 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-400">${escapeHtml(s.idSOS.slice(0, 6).toUpperCase())}</span>
+            <span class="text-xs font-bold text-slate-400">${escapeHtml(s.id.slice(0, 6).toUpperCase())}</span>
             <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-700">Résolu</span>
           </div>
           <p class="text-sm font-bold text-slate-800">${escapeHtml(nomResolver(s.pelerinId))}</p>

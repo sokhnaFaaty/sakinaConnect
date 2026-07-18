@@ -284,9 +284,9 @@ async function openPelerinForm(pelerin = null) {
 export async function openPelerinDetail(pelerin, utilisateurMap, groupeMap, hotels, guides) {
   const utilisateur = utilisateurMap[pelerin.utilisateurId];
   const groupe = groupeMap[pelerin.groupeId];
-  const hotelMecque = groupe ? hotels.find((h) => h.idHotel === groupe.hotelMecqueId)?.nom : "-";
-  const hotelMedine = groupe ? hotels.find((h) => h.idHotel === groupe.hotelMedineId)?.nom : "-";
-  const guide = groupe ? guides.find((g) => g.idGuide === groupe.guideId) : null;
+  const hotelMecque = groupe ? hotels.find((h) => h.id === groupe.hotelMecqueId)?.nom : "-";
+  const hotelMedine = groupe ? hotels.find((h) => h.id === groupe.hotelMedineId)?.nom : "-";
+  const guide = groupe ? guides.find((g) => g.id === groupe.guideId) : null;
   const guideNom = guide ? utilisateurMap[guide.utilisateurId]?.nomComplet : "-";
 
   // Le proche associé, s'il existe, vient du service procheService (à récupérer avant l'appel)

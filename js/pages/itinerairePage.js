@@ -43,7 +43,7 @@ export async function renderItinerairePage() {
       app.innerHTML = `<section class="rounded-[2rem] border border-amber-200 bg-amber-50 p-8 text-center"><p class="text-sm font-semibold text-amber-700">Aucun profil guide associé à ce compte.</p></section>`;
       return;
     }
-    const groupe = await getGroupeDuGuide(guide.idGuide);
+    const groupe = await getGroupeDuGuide(guide.id);
     if (!groupe) {
       app.innerHTML = `<section class="rounded-[2rem] border border-slate-200 bg-white p-8 text-center"><p class="text-sm font-semibold text-slate-500">Aucun groupe ne t'a encore été assigné.</p></section>`;
       return;
@@ -66,7 +66,7 @@ export async function renderItinerairePage() {
     ? `
       <div class="mb-4">
         <select id="selectGroupeItineraire" class="w-full max-w-xs rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
-          ${groupesDisponibles.map((g) => `<option value="${escapeHtml(g.idGroupe)}">${escapeHtml(g.nom)}</option>`).join("")}
+          ${groupesDisponibles.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.nom)}</option>`).join("")}
         </select>
       </div>
     `
@@ -107,9 +107,9 @@ export async function renderItinerairePage() {
   `;
 
   etatPage = {
-    planning: await getPlanningDuGroupe(groupeSelectionne.idGroupe),
+    planning: await getPlanningDuGroupe(groupeSelectionne.id),
     categories,
-    groupeId: groupeSelectionne.idGroupe,
+    groupeId: groupeSelectionne.id,
     filtreJour: "tous",
     filtreCategorie: "tous",
     pageActuelle: 1,

@@ -30,12 +30,12 @@ export async function renderPoleUrgencePelerinPage() {
     getSos(),
   ]);
 
-  const groupe = groupes.find((g) => g.idGroupe === pelerin.groupeId);
-  const guide = groupe ? guides.find((g) => g.idGuide === groupe.guideId) : null;
+  const groupe = groupes.find((g) => g.id === pelerin.groupeId);
+  const guide = groupe ? guides.find((g) => g.id === groupe.guideId) : null;
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
   const guideUtilisateur = guide ? utilisateurMap[guide.utilisateurId] : null;
 
-  const mesSos = tousLesSos.filter((s) => s.pelerinId === pelerin.idPelerin);
+  const mesSos = tousLesSos.filter((s) => s.pelerinId === pelerin.id);
   const mesSosResolus = mesSos.filter((s) => s.statut === "RESOLU");
   const sosActif = mesSos.find((s) => s.statut === "EN_ATTENTE") || null;
 
@@ -60,7 +60,7 @@ export async function renderPoleUrgencePelerinPage() {
               ? mesSosResolus.map((s) => `
                   <div class="mb-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 last:mb-0">
                     <div class="mb-1 flex items-center justify-between">
-                      <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-black text-slate-600">${escapeHtml(s.idSOS.slice(0, 6).toUpperCase())}</span>
+                      <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-black text-slate-600">${escapeHtml(s.id.slice(0, 6).toUpperCase())}</span>
                       <span class="text-xs text-slate-400">${new Date(s.dateHeure).toLocaleString("fr-FR")}</span>
                     </div>
                     <p class="flex items-center gap-1 text-sm text-slate-600"><i class="fa-solid fa-location-dot"></i> ${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}</p>

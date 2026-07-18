@@ -25,11 +25,11 @@ export async function renderDashboardPelerinPage() {
     getGuides(),
     getUtilisateurs(),
     getPlanningDuGroupe(pelerin.groupeId),
-    getSosActifDuPelerin(pelerin.idPelerin),
+    getSosActifDuPelerin(pelerin.id),
   ]);
 
   const groupe = groupes.find((g) => g.idGroupe === pelerin.groupeId);
-  const guide = groupe ? guides.find((g) => g.idGuide === groupe.guideId) : null;
+  const guide = groupe ? guides.find((g) => g.id === groupe.guideId) : null;
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
   const guideUtilisateur = guide ? utilisateurMap[guide.utilisateurId] : null;
 
@@ -128,12 +128,12 @@ function renderZoneSos(pelerin, groupe, sosActif) {
       onConfirm: async () => {
         try {
           await declencherSos({
-            pelerinId: pelerin.idPelerin,
+            pelerinId: pelerin.id,
             guideId: groupe?.guideId || null,
             commentaire: "",
           });
           showToast("Alerte SOS envoyée. De l'aide arrive.");
-          const nouveauSosActif = await getSosActifDuPelerin(pelerin.idPelerin);
+          const nouveauSosActif = await getSosActifDuPelerin(pelerin.id);
           renderZoneSos(pelerin, groupe, nouveauSosActif);
         } catch (error) {
           showToast(error.message, "error");
