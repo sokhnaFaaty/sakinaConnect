@@ -85,16 +85,33 @@ export function setLayoutSync(fn) {
 
 const DEFAULT_PAGE = "login";
 
+// Lit la page à afficher depuis le hash de l'URL. Ex : "#/groupes" -> "groupes"
 export function getCurrentPageFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const page = params.get("page");
+  const page = window.location.hash.replace(/^#\/?/, "");
   return routes[page] ? page : DEFAULT_PAGE;
 }
 
+// Vrai quand c'est NOUS qui changeons le hash (pour ne pas re-naviguer en double)
+let miseAJourInterne = false;
+
+// Met à jour l'URL (le hash) sans recharger la page. Ex : "#/groupes"
 function updatePageUrl(page) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("page", page);
-  history.pushState(null, "", url);
+  const cible = `#/${page}`;
+  if (window.location.hash !== cible) {
+    miseAJourInterne = true;
+    window.location.hash = cible;
+  }
+}
+
+// Appelé par app.js à chaque changement de hash : retour/avance du navigateur,
+// lien direct, ou saisie manuelle de l'URL.
+export function onHashChange() {
+  if (miseAJourInterne) {
+    // Le hash vient d'être changé par notre propre navigate() : page déjà affichée, on ignore.
+    miseAJourInterne = false;
+    return;
+  }
+  navigate(getCurrentPageFromUrl(), false);
 }
 
 async function afficherPage(activePage) {
