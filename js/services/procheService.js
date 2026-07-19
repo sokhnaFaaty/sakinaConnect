@@ -10,11 +10,19 @@ function normalizeProche(data) {
     utilisateurId: data.utilisateurId,
     pelerinId: data.pelerinId,
     lienParente: String(data.lienParente).trim(),
+    isActive: data.isActive !== false,
   };
 }
 
 export async function getProches() {
-  return apiRequest(ENDPOINTS.proches, {}, "Impossible de charger les proches.");
+  const proches = await apiRequest(ENDPOINTS.proches, {}, "Impossible de charger les proches.");
+  return proches.filter((p) => p.isActive !== false);
+}
+
+// Proches archivés (soft delete) — pour la page Archives
+export async function getProchesArchives() {
+  const proches = await apiRequest(ENDPOINTS.proches, {}, "Impossible de charger les proches archivés.");
+  return proches.filter((p) => p.isActive === false);
 }
 
 // Retrouve la fiche proche liée au compte utilisateur connecté
@@ -52,6 +60,7 @@ export async function createProche(data) {
     role: "PROCHE",
     photo: "",
     dateCreation: new Date().toISOString().slice(0, 10),
+    isActive: true,
   };
 
   await apiRequest(
@@ -78,10 +87,27 @@ export async function createProche(data) {
   return { proche: procheCree, motDePasseGenere };
 }
 
+// Soft delete : archive la fiche proche ET son compte utilisateur lié
 export async function deleteProche(id) {
-  return apiRequest(
-    `${ENDPOINTS.proches}/${id}`,
-    { method: "DELETE" },
-    "Impossible de supprimer le proche."
-  );
+  const proche = await apiRequest(`${ENDPOINTS.proches}/${id}`, {}, "Impossible de charger le proche.");
+  await apiRequest(`${ENDPOINTS.proches}/${id}`, { method: "PATCH", body: JSON.stringify({ isActive: false }) }, "Impossible d'archiver le proche.");
+  if (proche?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${proche.utilisateurId}`, { method: "PATCH", body: JSON.stringify({ isActive: false }) }, "Impossible d'archiver le compte du proche.");
+  }
+}
+
+export async function restoreProche(id) {
+  const proche = await apiRequest(`${ENDPOINTS.proches}/${id}`, {}, "Impossible de charger le proche.");
+  await apiRequest(`${ENDPOINTS.proches}/${id}`, { method: "PATCH", body: JSON.stringify({ isActive: true }) }, "Impossible de restaurer le proche.");
+  if (proche?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${proche.utilisateurId}`, { method: "PATCH", body: JSON.stringify({ isActive: true }) }, "Impossible de restaurer le compte du proche.");
+  }
+}
+
+export async function deleteProcheDefinitif(id) {
+  const proche = await apiRequest(`${ENDPOINTS.proches}/${id}`, {}, "Impossible de charger le proche.");
+  await apiRequest(`${ENDPOINTS.proches}/${id}`, { method: "DELETE" }, "Impossible de supprimer le proche.");
+  if (proche?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${proche.utilisateurId}`, { method: "DELETE" }, "Impossible de supprimer le compte du proche.");
+  }
 }

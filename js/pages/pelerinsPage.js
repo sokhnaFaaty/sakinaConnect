@@ -582,11 +582,11 @@ function bindPelerinRowEvents(pelerins, utilisateurMap, groupeMap, hotels, guide
     button.addEventListener("click", () => {
       const id = button.dataset.delete;
       openConfirm({
-        message: "Voulez-vous supprimer ce pèlerin ?",
+        message: `Voulez-vous supprimer ce pèlerin ?<br/><span class="text-xs text-amber-600">Il sera archivé (avec son compte) et pourra être restauré.</span>`,
         onConfirm: async () => {
           try {
             await deletePelerin(id);
-            showToast("Pèlerin supprimé.");
+            showToast("Pèlerin archivé.");
             await renderPelerinsPage();
           } catch (error) {
             showToast(error.message, "error");

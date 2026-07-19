@@ -68,6 +68,7 @@ export async function createGuide(data) {
     role: "GUIDE",
     photo: data.photo || "",
     dateCreation: new Date().toISOString().slice(0, 10),
+    isActive: true,
   };
 
   await apiRequest(
@@ -127,20 +128,29 @@ export async function updateGuide(id, data) {
   }
 }
 
-// Soft delete : archive le guide (il pourra être restauré depuis la page Archives)
+// Soft delete : archive le guide ET son compte utilisateur lié
 export async function deleteGuide(id) {
-  return apiRequest(
-    `${ENDPOINTS.guides}/${id}`,
-    { method: "PATCH", body: JSON.stringify({ isActive: false }) },
-    "Impossible d'archiver le guide."
-  );
+  const guide = await apiRequest(`${ENDPOINTS.guides}/${id}`, {}, "Impossible de charger le guide.");
+  await apiRequest(`${ENDPOINTS.guides}/${id}`, { method: "PATCH", body: JSON.stringify({ isActive: false }) }, "Impossible d'archiver le guide.");
+  if (guide?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${guide.utilisateurId}`, { method: "PATCH", body: JSON.stringify({ isActive: false }) }, "Impossible d'archiver le compte du guide.");
+  }
 }
 
-// Restaure un guide précédemment archivé
+// Restaure la fiche guide et réactive son compte
 export async function restoreGuide(id) {
-  return apiRequest(
-    `${ENDPOINTS.guides}/${id}`,
-    { method: "PATCH", body: JSON.stringify({ isActive: true }) },
-    "Impossible de restaurer le guide."
-  );
+  const guide = await apiRequest(`${ENDPOINTS.guides}/${id}`, {}, "Impossible de charger le guide.");
+  await apiRequest(`${ENDPOINTS.guides}/${id}`, { method: "PATCH", body: JSON.stringify({ isActive: true }) }, "Impossible de restaurer le guide.");
+  if (guide?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${guide.utilisateurId}`, { method: "PATCH", body: JSON.stringify({ isActive: true }) }, "Impossible de restaurer le compte du guide.");
+  }
+}
+
+// Suppression définitive : vrai DELETE de la fiche et du compte lié
+export async function deleteGuideDefinitif(id) {
+  const guide = await apiRequest(`${ENDPOINTS.guides}/${id}`, {}, "Impossible de charger le guide.");
+  await apiRequest(`${ENDPOINTS.guides}/${id}`, { method: "DELETE" }, "Impossible de supprimer le guide.");
+  if (guide?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${guide.utilisateurId}`, { method: "DELETE" }, "Impossible de supprimer le compte du guide.");
+  }
 }
