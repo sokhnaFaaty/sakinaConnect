@@ -122,10 +122,16 @@ async function afficherPage(activePage) {
   const route = routes[activePage];
 
   app.innerHTML = `
-    <div class="grid min-h-[50vh] place-items-center rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
-      <div>
-        <div class="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
-        <p class="mt-4 text-sm font-bold text-slate-500">Chargement...</p>
+    <div class="grid min-h-[60vh] place-items-center">
+      <div class="flex flex-col items-center gap-4 rounded-[2rem] border border-slate-200 bg-white px-12 py-10 text-center shadow-sm">
+        <div class="relative flex h-16 w-16 items-center justify-center">
+          <div class="absolute inset-0 animate-spin rounded-full border-4 border-slate-200 border-t-[#BC7B3B]"></div>
+          <i class="fa-solid fa-moon text-xl text-[#333D2A]"></i>
+        </div>
+        <div>
+          <p class="font-display text-lg font-black text-[#333D2A]">Sakina <span class="text-[#BC7B3B]">Connect</span></p>
+          <p class="mt-1 text-sm font-semibold text-slate-400">Chargement…</p>
+        </div>
       </div>
     </div>
   `;
