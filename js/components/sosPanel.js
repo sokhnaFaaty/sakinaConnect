@@ -137,8 +137,11 @@ export function renderPelerinSosActif(containerId, sos, guideNom, guideTelephone
           <p class="mt-1 flex items-center gap-1 text-sm font-bold text-slate-800">
             <i class="fa-solid fa-location-dot text-rose-500"></i> ${sos.latitude.toFixed(4)}, ${sos.longitude.toFixed(4)}
           </p>
+          ${sos.commentaire ? `<p class="mt-1 text-xs italic text-slate-500">"${escapeHtml(sos.commentaire)}"</p>` : ""}
           <p class="mt-3 text-xs font-extrabold uppercase tracking-widest text-slate-400">Guide responsable :</p>
           <p class="mt-1 text-sm font-bold text-slate-800">${escapeHtml(guideNom)}</p>
+          <p class="text-xs text-slate-500">Guide Accompagnateur</p>
+          ${guideTelephone ? `<p class="mt-0.5 flex items-center gap-1 text-sm text-slate-600"><i class="fa-solid fa-phone text-rose-500"></i> ${escapeHtml(String(guideTelephone))}</p>` : ""}
         </div>
         <div class="rounded-2xl bg-rose-50 p-4">
           <p class="text-xs font-extrabold uppercase tracking-widest text-rose-600">Commentaire et Actions :</p>
