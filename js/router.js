@@ -52,7 +52,7 @@ const ROUTE_PERMISSIONS = {
   "pole-urgence": [ROLES.ADMIN],
   "mon-pole-urgence": [ROLES.GUIDE],
     "pole-urgence-pelerin": [ROLES.PELERIN],
-      "itineraire": [ROLES.GUIDE,ROLES.ADMIN],
+      "itineraire": [ROLES.GUIDE, ROLES.ADMIN, ROLES.PELERIN],
 
 
 

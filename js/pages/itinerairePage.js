@@ -8,6 +8,7 @@ import { showError, hideError, validateField } from "../utils/formValidator.js";
 import { getSession, getUserRole } from "../utils/auth.js";
 import { getGuideByUtilisateurId, getGroupeDuGuide } from "../services/guideService.js";
 import { getGroupes } from "../services/groupeService.js";
+import { getPelerinByUtilisateurId } from "../services/pelerinService.js";
 import { getCategories } from "../services/categorieService.js";
 import {
   getPlanningDuGroupe,
@@ -33,6 +34,8 @@ export async function renderItinerairePage() {
   const app = document.getElementById("app");
   const user = getSession();
   const role = getUserRole();
+  // Seuls l'admin et le guide peuvent créer/modifier/supprimer ; le pèlerin est en lecture seule.
+  const canEdit = role === "ADMIN" || role === "GUIDE";
 
   let groupesDisponibles = [];
   let groupeSelectionne = null;
@@ -46,6 +49,16 @@ export async function renderItinerairePage() {
     const groupe = await getGroupeDuGuide(guide.id);
     if (!groupe) {
       app.innerHTML = `<section class="rounded-[2rem] border border-slate-200 bg-white p-8 text-center"><p class="text-sm font-semibold text-slate-500">Aucun groupe ne t'a encore été assigné.</p></section>`;
+      return;
+    }
+    groupesDisponibles = [groupe];
+    groupeSelectionne = groupe;
+  } else if (role === "PELERIN") {
+    const pelerin = await getPelerinByUtilisateurId(user.id);
+    const tousGroupes = await getGroupes();
+    const groupe = pelerin ? tousGroupes.find((g) => g.id === pelerin.groupeId) : null;
+    if (!groupe) {
+      app.innerHTML = `<section class="rounded-[2rem] border border-slate-200 bg-white p-8 text-center"><p class="text-sm font-semibold text-slate-500">Aucun groupe ne t'est encore assigné.</p></section>`;
       return;
     }
     groupesDisponibles = [groupe];
@@ -78,8 +91,8 @@ export async function renderItinerairePage() {
         kicker: "Voyage",
         title: "Itinéraire de voyages & Rituels",
         subtitle: "Chronologie épurée détaillant la logistique, le transport et les instructions spirituelles.",
-        actionLabel: "Ajouter un Evenement",
-        actionId: "addEvenementBtn",
+        actionLabel: canEdit ? "Ajouter un Evenement" : null,
+        actionId: canEdit ? "addEvenementBtn" : null,
         actionIcon: "fa-plus",
       })}
 
@@ -113,6 +126,7 @@ export async function renderItinerairePage() {
     filtreJour: "tous",
     filtreCategorie: "tous",
     pageActuelle: 1,
+    canEdit,
   };
 
   afficherFiltresJour();
@@ -120,7 +134,8 @@ export async function renderItinerairePage() {
   rafraichirAffichage();
   initialiserCarteAvecPremierEvenement();
 
-  document.getElementById("addEvenementBtn").addEventListener("click", () => ouvrirFormulaireEvenement(null));
+  const addEvenementBtn = document.getElementById("addEvenementBtn");
+  if (addEvenementBtn) addEvenementBtn.addEventListener("click", () => ouvrirFormulaireEvenement(null));
 
   const select = document.getElementById("selectGroupeItineraire");
   if (select) {
@@ -290,10 +305,12 @@ function carteEvenement(evenement, categorieMap) {
       <h3 class="font-black text-slate-900">${escapeHtml(evenement.titre)}</h3>
       <p class="mt-1 text-sm text-slate-500">${escapeHtml(evenement.description)}</p>
 
+      ${etatPage.canEdit ? `
       <div class="mt-3 flex gap-4 text-xs font-extrabold">
         <button data-modifier="${escapeHtml(evenement.id)}" class="text-amber-600 hover:underline">Modifier</button>
         <button data-supprimer="${escapeHtml(evenement.id)}" class="text-rose-600 hover:underline">Supprimer</button>
       </div>
+      ` : ""}
     </div>
   `;
 }
