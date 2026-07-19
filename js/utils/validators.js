@@ -14,15 +14,20 @@ export function validateEmailFormat(email) {
   return re.test(value) ? null : "L'email n'est pas valide.";
 }
 
-// Valide un numéro de téléphone sénégalais.
-// 9 chiffres, préfixes mobiles autorisés : 70, 75, 76, 77, 78.
-// Tolère les espaces et un indicatif +221 / 221 en préfixe.
-export function validateTelephoneSN(telephone) {
+// Valide un numéro de téléphone du Sénégal (SN) ou d'Arabie Saoudite / Makka (KSA).
+// Ramène aux 9 derniers chiffres (tolère espaces et indicatif +221 / +966, et le 0 local KSA).
+//   SN  : 9 chiffres, préfixes mobiles 70, 75, 76, 77, 78.
+//   KSA : 9 chiffres, mobile commençant par 5 (ex. 05x local -> 5xxxxxxxx).
+export function validateTelephone(telephone) {
   let value = String(telephone ?? "").replace(/\D/g, "");
   if (!value) return "Le téléphone est obligatoire.";
-  if (value.length > 9) value = value.slice(-9); // retire un éventuel indicatif 221
-  if (!/^\d{9}$/.test(value)) return "Le téléphone doit contenir 9 chiffres (ex: 77 123 45 67).";
-  if (!/^(70|75|76|77|78)/.test(value)) return "Opérateur non autorisé (70, 75, 76, 77, 78).";
+  if (value.length > 9) value = value.slice(-9); // retire un éventuel indicatif (221 / 966) ou 0 local
+  if (!/^\d{9}$/.test(value)) return "Le téléphone doit contenir 9 chiffres.";
+  const estSN = /^(70|75|76|77|78)/.test(value);
+  const estKSA = /^5/.test(value);
+  if (!estSN && !estKSA) {
+    return "Numéro invalide (Sénégal : 70/75/76/77/78 — Arabie Saoudite : 5X).";
+  }
   return null;
 }
 
