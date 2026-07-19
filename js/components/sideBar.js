@@ -2,6 +2,7 @@ import { getUserRole } from "../utils/auth.js";
 
 const NAV_LINKS_BY_ROLE = {
   ADMIN: [
+    { page: "annuaire-guides", label: "Annuaire des Guides", icon: "fa-user-tie" },
     { page: "groupes", label: "Liste des Groupes", icon: "fa-people-group" },
     { page: "pelerins", label: "Liste des Pèlerins", icon: "fa-users" },
       { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },

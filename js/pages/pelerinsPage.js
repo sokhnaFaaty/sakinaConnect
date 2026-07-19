@@ -2,6 +2,7 @@ import { pageHeader } from "../components/pageHeader.js";
 import { renderTable } from "../components/table.js";
 import { openModal, openConfirm, openInfoCopy } from "../components/modal.js";
 import { openDrawer } from "../components/drawer.js";
+import { viewToggle, bindViewToggle, getSavedView, saveView } from "../components/viewToogle.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
@@ -421,6 +422,69 @@ export async function renderPelerinsPage() {
   // Jointure : pour chaque pèlerin, on retrouve son nom/sa photo via utilisateurId
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
 
+  const avatarHtml = (p) => {
+    const utilisateur = utilisateurMap[p.utilisateurId];
+    return utilisateur?.photo
+      ? `<img src="${escapeHtml(utilisateur.photo)}" alt="" class="h-10 w-10 rounded-full object-cover" />`
+      : `<div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400"><i class="fa-solid fa-user"></i></div>`;
+  };
+  const nomHtml = (p) => escapeHtml(utilisateurMap[p.utilisateurId]?.nomComplet || "—");
+  const visaBadge = (p) => p.statutVisa === "APPROUVE"
+    ? `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">Approuvé</span>`
+    : `<span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">${escapeHtml(p.statutVisa)}</span>`;
+
+  const actionsHtml = (p) => `
+    <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-view="${escapeHtml(p.id)}" title="Voir">
+      <i class="fa-solid fa-eye"></i>
+    </button>
+    <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-edit="${escapeHtml(p.id)}" title="Modifier">
+      <i class="fa-solid fa-pen"></i>
+    </button>
+    <button class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-extrabold text-white" data-delete="${escapeHtml(p.id)}" title="Supprimer">
+      <i class="fa-solid fa-trash"></i>
+    </button>`;
+
+  const tableHtml = () => `
+    <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      ${renderTable({
+        rows: pelerins,
+        emptyMessage: "Aucun pèlerin enregistré.",
+        columns: [
+          { label: "Image", render: (p) => avatarHtml(p) },
+          { label: "Nom", render: (p) => `<strong class="font-bold text-slate-950">${nomHtml(p)}</strong>` },
+          { label: "N Passeport", render: (p) => escapeHtml(p.numeroPasseport) },
+          { label: "Groupe", render: (p) => escapeHtml(groupeMap[p.groupeId]?.nom || "-") },
+          { label: "Statut Visa", render: (p) => visaBadge(p) },
+          { label: "Santé", render: (p) => escapeHtml(p.informationsMedicales || "----") },
+          { label: "Actions", render: (p) => `<div class="flex flex-wrap gap-2">${actionsHtml(p)}</div>` },
+        ],
+      })}
+    </article>`;
+
+  const cardsHtml = () => pelerins.length
+    ? `<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        ${pelerins.map((p) => `
+          <article class="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex-1 p-5">
+              <div class="mb-3 flex items-center gap-3">
+                ${avatarHtml(p)}
+                <div>
+                  <h3 class="font-black text-slate-950">${nomHtml(p)}</h3>
+                  <p class="text-xs text-slate-500">${escapeHtml(groupeMap[p.groupeId]?.nom || "Sans groupe")}</p>
+                </div>
+              </div>
+              <div class="grid gap-2 text-sm text-slate-600">
+                <p class="flex items-center gap-2"><i class="fa-solid fa-passport w-4 text-[#333D2A]"></i> ${escapeHtml(p.numeroPasseport)}</p>
+                <p class="flex items-center gap-2"><i class="fa-solid fa-file-shield w-4 text-[#333D2A]"></i> ${visaBadge(p)}</p>
+                <p class="flex items-center gap-2"><i class="fa-solid fa-heart-pulse w-4 text-[#333D2A]"></i> ${escapeHtml(p.informationsMedicales || "----")}</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 bg-[#F2F2DE]/70 px-5 py-3">${actionsHtml(p)}</div>
+          </article>
+        `).join("")}
+      </div>`
+    : `<div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm">Aucun pèlerin enregistré.</div>`;
+
   app.innerHTML = `
     <section>
       ${pageHeader({
@@ -431,61 +495,25 @@ export async function renderPelerinsPage() {
         actionId: "addPelerinBtn",
         actionIcon: "fa-user-plus",
       })}
-
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        ${renderTable({
-          rows: pelerins,
-          emptyMessage: "Aucun pèlerin enregistré.",
-          columns: [
-            {
-              label: "Image",
-              render: (p) => {
-                const utilisateur = utilisateurMap[p.utilisateurId];
-                return utilisateur?.photo
-                  ? `<img src="${escapeHtml(utilisateur.photo)}" alt="" class="h-10 w-10 rounded-full object-cover" />`
-                  : `<div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400"><i class="fa-solid fa-user"></i></div>`;
-              },
-            },
-            {
-              label: "ID & Nom",
-              render: (p) => {
-                const utilisateur = utilisateurMap[p.utilisateurId];
-                return `<strong class="font-bold text-slate-950">${escapeHtml(utilisateur?.nomComplet || "—")}</strong>`;
-              },
-            },
-            { label: "N Passeport", render: (p) => escapeHtml(p.numeroPasseport) },
-            { label: "Groupe", render: (p) => escapeHtml(groupeMap[p.groupeId]?.nom || "-") },
-            { label: "Statut Visa", render: (p) => escapeHtml(p.statutVisa) },
-            { label: "Santé", render: (p) => escapeHtml(p.informationsMedicales || "----") },
-{
-  label: "Actions",
-  render: (p) => `
-    <div class="flex flex-wrap gap-2">
-      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-view="${escapeHtml(p.id)}">
-        <i class="fa-solid fa-eye"></i>
-      </button>
-      <button class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold" data-edit="${escapeHtml(p.id)}">
-        <i class="fa-solid fa-pen"></i>
-      </button>
-      <button class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-extrabold text-white" data-delete="${escapeHtml(p.id)}">
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </div>
-  `,
-},
-
-          ],
-        })}
-      </article>
+      <div class="mb-4 flex justify-end" id="pelToggle"></div>
+      <div id="pelList"></div>
     </section>
   `;
 
-  bindPelerinEvents(pelerins, utilisateurMap, groupeMap, hotels, guides);
-}
-
-function bindPelerinEvents(pelerins, utilisateurMap, groupeMap, hotels, guides) {
   document.getElementById("addPelerinBtn").addEventListener("click", () => openPelerinForm());
 
+  let view = getSavedView("pelerins", "table");
+  const draw = () => {
+    const toggleEl = document.getElementById("pelToggle");
+    toggleEl.innerHTML = viewToggle(view);
+    document.getElementById("pelList").innerHTML = view === "card" ? cardsHtml() : tableHtml();
+    bindViewToggle(toggleEl, (v) => { view = v; saveView("pelerins", v); draw(); });
+    bindPelerinRowEvents(pelerins, utilisateurMap, groupeMap, hotels, guides);
+  };
+  draw();
+}
+
+function bindPelerinRowEvents(pelerins, utilisateurMap, groupeMap, hotels, guides) {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
       const pelerin = pelerins.find((p) => p.id === button.dataset.view);

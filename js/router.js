@@ -12,12 +12,14 @@ import { renderPoleUrgencePage } from "./pages/poleUrgencePage.js";
 import { renderDashboardPelerinPage } from "./pages/dashboardPelerinPage.js";
 import { renderMonPoleUrgencePage } from "./pages/monPoleUrgencePage.js";
 import { renderItinerairePage } from "./pages/itinerairePage.js";
+import { renderGuidesPage } from "./pages/guidesPage.js";
 
 const routes = {
   accueil: renderAccueilPage,
   login: renderLoginPage,
   groupes: renderGroupesPage,
   pelerins: renderPelerinsPage,
+  "annuaire-guides": renderGuidesPage,
   "mon-groupe": renderMonGroupePage,
    "dashboard-pelerin": renderDashboardPelerinPage,
   "pole-urgence": renderPoleUrgencePage,
@@ -32,6 +34,7 @@ const PUBLIC_PAGES = ["accueil", "login"];
 const ROUTE_PERMISSIONS = {
   groupes: [ROLES.ADMIN],
   pelerins: [ROLES.ADMIN],
+  "annuaire-guides": [ROLES.ADMIN],
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],
   "pole-urgence": [ROLES.ADMIN],
@@ -46,6 +49,13 @@ const ROUTE_PERMISSIONS = {
 function canAccess(page, role) {
   const allowedRoles = ROUTE_PERMISSIONS[page];
   return !allowedRoles || allowedRoles.includes(role);
+}
+
+// Hook fourni par app.js : (re)monte ou démonte le layout (sidebar/navbar)
+// selon l'état de connexion, à chaque navigation (login, clic menu, popstate).
+let layoutSync = null;
+export function setLayoutSync(fn) {
+  layoutSync = fn;
 }
 
 const DEFAULT_PAGE = "accueil";
@@ -63,6 +73,9 @@ function updatePageUrl(page) {
 }
 
 async function afficherPage(activePage) {
+  // Synchronise le layout (sidebar/navbar) avant tout rendu de page
+  if (layoutSync) layoutSync();
+
   const app = document.getElementById("app");
   const route = routes[activePage];
 
