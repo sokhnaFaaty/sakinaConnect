@@ -17,6 +17,16 @@ export async function getProches() {
   return apiRequest(ENDPOINTS.proches, {}, "Impossible de charger les proches.");
 }
 
+// Retrouve la fiche proche liée au compte utilisateur connecté
+export async function getProcheByUtilisateurId(utilisateurId) {
+  const proches = await apiRequest(
+    `${ENDPOINTS.proches}?utilisateurId=${utilisateurId}`,
+    {},
+    "Impossible de charger le profil proche."
+  );
+  return proches[0] || null;
+}
+
 /**
  * Crée le compte utilisateur (rôle PROCHE) ET sa fiche proche, liée à un pèlerin
  * @param {Object} data - { nomComplet, telephone, email (facultatif), lienParente, pelerinId }
