@@ -4,8 +4,6 @@ import { navigate, getCurrentPageFromUrl, setLayoutSync } from "./router.js";
 import { initConfirmModal } from "./components/confirmModal.js";
 import { isAuthenticated } from "./utils/auth.js";
 
-let layoutMounted = false;
-
 function mountLayout() {
   document.getElementById("sidebarRoot").innerHTML = renderSidebar();
   document.getElementById("navbarRoot").innerHTML = renderNavbar();
@@ -17,23 +15,25 @@ function mountLayout() {
 function ensureLayout() {
   const main = document.querySelector("main");
   const app = document.getElementById("app");
+  const navbarRoot = document.getElementById("navbarRoot");
 
   if (isAuthenticated()) {
-    // Restaure la mise en page applicative (le login passe main/#app en plein écran)
+    // Restaure la mise en page applicative (le login/accueil passent en plein écran)
     if (main) main.className = "min-h-screen pt-16 lg:pl-72";
     if (app) app.className = "mx-auto max-w-7xl p-4 sm:p-6 lg:p-8";
 
-    if (!layoutMounted) {
+    // (Re)monte le layout s'il est absent du DOM. On se base sur la présence réelle
+    // et non sur un drapeau : une page publique (accueil/login) vide les roots, donc
+    // il faut pouvoir remonter ensuite sans rechargement.
+    if (!navbarRoot || navbarRoot.childElementCount === 0) {
       mountLayout();
       bindNavbar();
       const sidebar = initSidebar();
       initNavigation(sidebar);
-      layoutMounted = true;
     }
-  } else if (layoutMounted) {
+  } else {
     document.getElementById("sidebarRoot").innerHTML = "";
-    document.getElementById("navbarRoot").innerHTML = "";
-    layoutMounted = false;
+    if (navbarRoot) navbarRoot.innerHTML = "";
   }
 }
 
