@@ -19,6 +19,8 @@ const NAV_LINKS_BY_ROLE = {
   ],
   PELERIN: [
     { page: "dashboard-pelerin", label: "Tableau de Bord", icon: "fa-gauge" },
+    { page: "mon-profil", label: "Mon profil", icon: "fa-user" },
+    { page: "mon-groupe-pelerin", label: "Mon groupe", icon: "fa-users" },
     { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
     { page: "annonces", label: "Tableau d'annonces", icon: "fa-bullhorn" },
     { page: "pole-urgence-pelerin", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
