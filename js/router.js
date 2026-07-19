@@ -19,6 +19,8 @@ import { renderDashboardGuidePage } from "./pages/dashboardGuidePage.js";
 import { renderDashboardProchePage } from "./pages/dashboardProchePage.js";
 import { renderProfilPelerinPage } from "./pages/profilPelerinPage.js";
 import { renderMonGroupePelerinPage } from "./pages/monGroupePelerinPage.js";
+import { renderSuiviFamilialPage } from "./pages/suiviFamilialPage.js";
+import { renderProfilProchePage } from "./pages/profilProchePage.js";
 
 const routes = {
   accueil: renderAccueilPage,
@@ -30,6 +32,8 @@ const routes = {
   "dashboard-admin": renderDashboardAdminPage,
   "dashboard-guide": renderDashboardGuidePage,
   "dashboard-proche": renderDashboardProchePage,
+  "suivi-familial": renderSuiviFamilialPage,
+  "mon-profil-proche": renderProfilProchePage,
   "mon-profil": renderProfilPelerinPage,
   "mon-groupe-pelerin": renderMonGroupePelerinPage,
   "mon-groupe": renderMonGroupePage,
@@ -51,6 +55,8 @@ const ROUTE_PERMISSIONS = {
   "dashboard-admin": [ROLES.ADMIN],
   "dashboard-guide": [ROLES.GUIDE],
   "dashboard-proche": [ROLES.PROCHE],
+  "suivi-familial": [ROLES.PROCHE],
+  "mon-profil-proche": [ROLES.PROCHE],
   "mon-profil": [ROLES.PELERIN],
   "mon-groupe-pelerin": [ROLES.PELERIN],
   "mon-groupe": [ROLES.GUIDE],

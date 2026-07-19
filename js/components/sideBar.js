@@ -27,6 +27,8 @@ const NAV_LINKS_BY_ROLE = {
   ],
   PROCHE: [
     { page: "dashboard-proche", label: "Tableau de Bord", icon: "fa-gauge" },
+    { page: "suivi-familial", label: "Suivi Familial", icon: "fa-heart" },
+    { page: "mon-profil-proche", label: "Mon profil", icon: "fa-user" },
   ],
 };
 
@@ -49,12 +51,14 @@ export function renderSidebar() {
         ${items}
       </nav>
 
+      ${role !== "PROCHE" ? `
       <div class="absolute bottom-5 w-full px-5 grid gap-3">
         <button id="sosBtn" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#B40909] px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span>Urgence SOS</span>
         </button>
       </div>
+      ` : ""}
     </aside>
 
     <div id="sidebarOverlay" class="fixed inset-0 z-30 hidden bg-slate-950/40 backdrop-blur-sm lg:hidden"></div>
