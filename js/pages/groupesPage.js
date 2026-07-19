@@ -2,6 +2,7 @@
 import { pageHeader } from "../components/pageHeader.js";
 import { renderTable } from "../components/table.js";
 import { openModal, openConfirm } from "../components/modal.js";
+import { openDrawer } from "../components/drawer.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
@@ -82,7 +83,7 @@ function groupeFormBody(groupe, guides, hotels, utilisateurMap) {
 }
 
 function openGroupeForm(groupe, guides, hotels, utilisateurMap) {
-  openModal({
+  openDrawer({
     title: groupe ? "Modifier le groupe de Voyage" : "Ajouter un groupe de Voyage",
     icon: "fa-people-group",
     body: groupeFormBody(groupe, guides, hotels, utilisateurMap),

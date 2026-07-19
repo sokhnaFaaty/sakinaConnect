@@ -1,6 +1,7 @@
 import { pageHeader } from "../components/pageHeader.js";
 import { renderTable } from "../components/table.js";
 import { openModal, openConfirm, openInfoCopy } from "../components/modal.js";
+import { openDrawer } from "../components/drawer.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
@@ -39,6 +40,20 @@ function pelerinFormBody(pelerin = null, groupes = []) {
         <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelPassport" value="${escapeHtml(pelerin?.numeroPasseport || "")}" placeholder="Numéro de passeport" />
         <p id="pelPassportError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
+
+      ${!isEdit ? `
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelEmail">Email *</label>
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="email" id="pelEmail" value="" placeholder="email@exemple.com" />
+        <p id="pelEmailError" class="mt-1 hidden text-xs text-rose-600"></p>
+      </div>
+
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelTelephone">Téléphone *</label>
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelTelephone" value="" placeholder="77 123 45 67" />
+        <p id="pelTelephoneError" class="mt-1 hidden text-xs text-rose-600"></p>
+      </div>
+      ` : ""}
 
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelStatutVisa">Statut du Visa *</label>
@@ -145,7 +160,7 @@ function attachProcheToggle(modal) {
 async function openPelerinForm(pelerin = null) {
   const groupes = await getGroupes();
 
-  openModal({
+  openDrawer({
     title: pelerin ? "Modifier un Pèlerin" : "Ajouter un Pèlerin",
     icon: "fa-user",
     body: pelerinFormBody(pelerin, groupes),
@@ -159,6 +174,9 @@ async function openPelerinForm(pelerin = null) {
       const informationsMedicales = modal.querySelector("#pelInfosMedicales").value.trim();
       const contactUrgenceNom = modal.querySelector("#pelContactNom").value.trim();
       const contactUrgenceTelephone = modal.querySelector("#pelContactTel").value.trim();
+      // Champs email/téléphone du compte pèlerin : présents en création uniquement
+      const email = modal.querySelector("#pelEmail")?.value.trim() || "";
+      const telephone = modal.querySelector("#pelTelephone")?.value.trim() || "";
 
       let hasError = false;
 
@@ -169,6 +187,14 @@ async function openPelerinForm(pelerin = null) {
         [contactUrgenceNom, "pelContactNom", "pelContactNomError", "Le nom du contact d'urgence"],
         [contactUrgenceTelephone, "pelContactTel", "pelContactTelError", "Le téléphone du contact d'urgence"],
       ];
+
+      // En création, l'email et le téléphone du compte pèlerin sont obligatoires
+      if (!pelerin) {
+        checks.push(
+          [email, "pelEmail", "pelEmailError", "L'email"],
+          [telephone, "pelTelephone", "pelTelephoneError", "Le téléphone"]
+        );
+      }
 
       checks.forEach(([value, inputId, errorId, label]) => {
         const error = validateField(value, label);
@@ -243,6 +269,8 @@ async function openPelerinForm(pelerin = null) {
         } else {
           const nouveauPelerin = await createPelerin({
             nomComplet,
+            email,
+            telephone,
             numeroPasseport,
             statutVisa,
             groupeId,
