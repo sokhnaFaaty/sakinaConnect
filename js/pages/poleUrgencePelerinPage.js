@@ -129,12 +129,12 @@ export async function renderPoleUrgencePelerinPage() {
   };
   drawResolus();
 
-  afficherZonePrincipale(pelerin, groupe, sosActif, guideUtilisateur?.nomComplet || "Non assigné");
+  afficherZonePrincipale(pelerin, groupe, sosActif, guideUtilisateur?.nomComplet || "Non assigné", guideUtilisateur?.telephone || "");
 }
 
-async function afficherZonePrincipale(pelerin, groupe, sosActif, guideNom) {
+async function afficherZonePrincipale(pelerin, groupe, sosActif, guideNom, guideTelephone) {
   if (sosActif) {
-    renderPelerinSosActif("sosMainZone", sosActif, guideNom);
+    renderPelerinSosActif("sosMainZone", sosActif, guideNom, guideTelephone);
   } else {
     renderPelerinSosTrigger("sosMainZone", pelerin, groupe, async () => {
       await renderPoleUrgencePelerinPage();
