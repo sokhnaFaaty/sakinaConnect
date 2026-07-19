@@ -1,12 +1,6 @@
 import { ENDPOINTS } from "../config/api.js";
 import { apiRequest } from "./apiClient.js";
 
-/**
- * Vérifications d'unicité côté front, en attendant la migration vers MySQL.
- * En base MySQL, ces règles seront des contraintes UNIQUE sur :
- *   utilisateurs.email, utilisateurs.telephone, pelerins.numeroPasseport.
- * Ces fonctions permettent de refuser un doublon avant l'appel de création/màj.
- */
 
 function normalizeEmail(value) {
   return String(value ?? "").trim().toLowerCase();

@@ -7,6 +7,8 @@ import { viewToggle, bindViewToggle, getSavedView, saveView } from "../component
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
+import { validateEmailFormat, validateTelephone } from "../utils/validators.js";
+import { emailExiste, telephoneExiste } from "../services/validationService.js";
 import {
   getGuides,
   createGuide,
@@ -67,17 +69,30 @@ function openGuideForm(guide, utilisateurMap, onDone) {
       const disponibilite = overlay.querySelector("#guideDispo").checked;
 
       let hasError = false;
-      const checks = [
-        [nomComplet, "guideNom", "guideNomError", "Le nom complet"],
-        [telephone, "guideTel", "guideTelError", "Le téléphone"],
-        [email, "guideEmail", "guideEmailError", "L'email"],
-      ];
-      checks.forEach(([value, inputId, errorId, label]) => {
-        const error = validateField(value, label);
-        if (error) { showError(inputId, errorId, error); hasError = true; }
-        else hideError(inputId, errorId);
-      });
+      // Présence du nom
+      const nomError = validateField(nomComplet, "Le nom complet");
+      if (nomError) { showError("guideNom", "guideNomError", nomError); hasError = true; }
+      else hideError("guideNom", "guideNomError");
+      // Format email
+      const emailError = validateEmailFormat(email);
+      if (emailError) { showError("guideEmail", "guideEmailError", emailError); hasError = true; }
+      else hideError("guideEmail", "guideEmailError");
+      // Format téléphone (Sénégal ou Arabie Saoudite)
+      const telError = validateTelephone(telephone);
+      if (telError) { showError("guideTel", "guideTelError", telError); hasError = true; }
+      else hideError("guideTel", "guideTelError");
       if (hasError) return false;
+
+      // Unicité email / téléphone (exclut le compte courant en édition)
+      const excludeUserId = guide ? guide.utilisateurId : null;
+      if (await emailExiste(email, excludeUserId)) {
+        showError("guideEmail", "guideEmailError", "Cet email est déjà utilisé.");
+        return false;
+      }
+      if (await telephoneExiste(telephone, excludeUserId)) {
+        showError("guideTel", "guideTelError", "Ce téléphone est déjà utilisé.");
+        return false;
+      }
 
       // Upload photo éventuelle
       let photoUrl = "";

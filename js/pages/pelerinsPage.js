@@ -6,6 +6,8 @@ import { viewToggle, bindViewToggle, getSavedView, saveView } from "../component
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
+import { validateEmailFormat, validateTelephone } from "../utils/validators.js";
+import { emailExiste, telephoneExiste, passeportExiste } from "../services/validationService.js";
 import {
   getPelerins,
   createPelerin,
@@ -129,6 +131,7 @@ function pelerinFormBody(pelerin = null, groupes = []) {
         <div>
           <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheEmail">Email (facultatif)</label>
           <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="email" id="procheEmail" placeholder="Entrez l'email du proche" />
+          <p id="procheEmailError" class="mt-1 hidden text-xs text-rose-600"></p>
         </div>
         <div>
           <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheLien">Lien de Parenté *</label>
@@ -189,14 +192,6 @@ async function openPelerinForm(pelerin = null) {
         [contactUrgenceTelephone, "pelContactTel", "pelContactTelError", "Le téléphone du contact d'urgence"],
       ];
 
-      // En création, l'email et le téléphone du compte pèlerin sont obligatoires
-      if (!pelerin) {
-        checks.push(
-          [email, "pelEmail", "pelEmailError", "L'email"],
-          [telephone, "pelTelephone", "pelTelephoneError", "Le téléphone"]
-        );
-      }
-
       checks.forEach(([value, inputId, errorId, label]) => {
         const error = validateField(value, label);
         if (error) {
@@ -206,6 +201,16 @@ async function openPelerinForm(pelerin = null) {
           hideError(inputId, errorId);
         }
       });
+
+      // En création : format de l'email et du téléphone du compte pèlerin
+      if (!pelerin) {
+        const emailError = validateEmailFormat(email);
+        if (emailError) { showError("pelEmail", "pelEmailError", emailError); hasError = true; }
+        else hideError("pelEmail", "pelEmailError");
+        const telError = validateTelephone(telephone);
+        if (telError) { showError("pelTelephone", "pelTelephoneError", telError); hasError = true; }
+        else hideError("pelTelephone", "pelTelephoneError");
+      }
 
       const procheOui = modal.querySelector("#procheOui")?.checked;
       let procheData = null;
@@ -232,6 +237,19 @@ async function openPelerinForm(pelerin = null) {
           }
         });
 
+        // Format du téléphone du proche (Sénégal ou Arabie Saoudite)
+        const procheTelError = validateTelephone(procheTelephone);
+        if (procheTelError) { showError("procheTelephone", "procheTelephoneError", procheTelError); hasError = true; }
+
+        // Format de l'email du proche (facultatif : seulement s'il est renseigné)
+        if (procheEmail) {
+          const procheEmailError = validateEmailFormat(procheEmail);
+          if (procheEmailError) { showError("procheEmail", "procheEmailError", procheEmailError); hasError = true; }
+          else hideError("procheEmail", "procheEmailError");
+        } else {
+          hideError("procheEmail", "procheEmailError");
+        }
+
         procheData = {
           nomComplet: procheNomComplet,
           telephone: procheTelephone,
@@ -241,6 +259,37 @@ async function openPelerinForm(pelerin = null) {
       }
 
       if (hasError) return false;
+
+      // Vérification d'unicité (passeport, et à la création : email/téléphone du compte)
+      if (pelerin) {
+        if (await passeportExiste(numeroPasseport, pelerin.id)) {
+          showError("pelPassport", "pelPassportError", "Ce numéro de passeport est déjà utilisé.");
+          return false;
+        }
+      } else {
+        if (await passeportExiste(numeroPasseport)) {
+          showError("pelPassport", "pelPassportError", "Ce numéro de passeport est déjà utilisé.");
+          return false;
+        }
+        if (await emailExiste(email)) {
+          showError("pelEmail", "pelEmailError", "Cet email est déjà utilisé.");
+          return false;
+        }
+        if (await telephoneExiste(telephone)) {
+          showError("pelTelephone", "pelTelephoneError", "Ce téléphone est déjà utilisé.");
+          return false;
+        }
+        if (procheData) {
+          if (procheData.email && await emailExiste(procheData.email)) {
+            showError("procheEmail", "procheEmailError", "Cet email est déjà utilisé.");
+            return false;
+          }
+          if (await telephoneExiste(procheData.telephone)) {
+            showError("procheTelephone", "procheTelephoneError", "Ce téléphone est déjà utilisé.");
+            return false;
+          }
+        }
+      }
 
       let photoUrl = "";
       const fileInput = modal.querySelector("#pelPhoto");
