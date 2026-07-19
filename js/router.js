@@ -21,6 +21,7 @@ import { renderProfilPelerinPage } from "./pages/profilPelerinPage.js";
 import { renderMonGroupePelerinPage } from "./pages/monGroupePelerinPage.js";
 import { renderSuiviFamilialPage } from "./pages/suiviFamilialPage.js";
 import { renderProfilProchePage } from "./pages/profilProchePage.js";
+import { renderArchivesPage } from "./pages/archivesPage.js";
 
 const routes = {
   accueil: renderAccueilPage,
@@ -34,6 +35,7 @@ const routes = {
   "dashboard-proche": renderDashboardProchePage,
   "suivi-familial": renderSuiviFamilialPage,
   "mon-profil-proche": renderProfilProchePage,
+  archives: renderArchivesPage,
   "mon-profil": renderProfilPelerinPage,
   "mon-groupe-pelerin": renderMonGroupePelerinPage,
   "mon-groupe": renderMonGroupePage,
@@ -58,6 +60,7 @@ const ROUTE_PERMISSIONS = {
   "suivi-familial": [ROLES.PROCHE],
   "mon-profil-proche": [ROLES.PROCHE],
   "mon-profil": [ROLES.PELERIN],
+  archives: [ROLES.ADMIN],
   "mon-groupe-pelerin": [ROLES.PELERIN],
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],

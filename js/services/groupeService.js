@@ -13,11 +13,19 @@ function normalizeGroupe(data) {
     hotelMedineId: data.hotelMedineId,
     dateDepart: data.dateDepart,
     dateRetour: data.dateRetour,
+    isActive: data.isActive !== false,
   };
 }
 
 export async function getGroupes() {
-  return apiRequest(ENDPOINTS.groupes, {}, "Impossible de charger les groupes.");
+  const groupes = await apiRequest(ENDPOINTS.groupes, {}, "Impossible de charger les groupes.");
+  return groupes.filter((g) => g.isActive !== false);
+}
+
+// Groupes archivés (soft delete) — pour la page Archives
+export async function getGroupesArchives() {
+  const groupes = await apiRequest(ENDPOINTS.groupes, {}, "Impossible de charger les groupes archivés.");
+  return groupes.filter((g) => g.isActive === false);
 }
 
 export async function createGroupe(data) {
@@ -61,7 +69,24 @@ export async function updateGroupe(id, data) {
   );
 }
 
+// Soft delete : archive le groupe
 export async function deleteGroupe(id) {
+  return apiRequest(
+    `${ENDPOINTS.groupes}/${id}`,
+    { method: "PATCH", body: JSON.stringify({ isActive: false }) },
+    "Impossible d'archiver le groupe."
+  );
+}
+
+export async function restoreGroupe(id) {
+  return apiRequest(
+    `${ENDPOINTS.groupes}/${id}`,
+    { method: "PATCH", body: JSON.stringify({ isActive: true }) },
+    "Impossible de restaurer le groupe."
+  );
+}
+
+export async function deleteGroupeDefinitif(id) {
   return apiRequest(
     `${ENDPOINTS.groupes}/${id}`,
     { method: "DELETE" },
