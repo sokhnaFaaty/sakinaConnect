@@ -3,6 +3,9 @@ import { escapeHtml } from "../utils/html.js";
 import { showToast } from "./toast.js";
 import { marquerSosResolu ,declencherSos} from "../services/sosService.js";
 import { openConfirm} from "./modal.js";
+import { pagination, bindPagination } from "./pagination.js";
+
+const SOS_PER_PAGE = 3;
 
 function tempsEcoule(dateHeure) {
   const diffMs = Date.now() - new Date(dateHeure).getTime();
@@ -36,27 +39,40 @@ export function renderSosPanel(containerId, sosActifs, pelerinNomResolver, onRes
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  container.innerHTML = `
-    <h2 class="mb-4 flex items-center gap-2 text-lg font-black text-slate-950">
-      <i class="fa-solid fa-tower-broadcast text-rose-600"></i> Alertes de Paniques Actives (${sosActifs.length})
-    </h2>
-    ${sosActifs.length
-      ? sosActifs.map((s) => sosCard(s, pelerinNomResolver(s.pelerinId))).join("")
-      : `<p class="text-sm text-slate-400">Aucune alerte active pour le moment.</p>`
-    }
-  `;
+  let page = 1;
+  const draw = () => {
+    const totalPages = Math.max(1, Math.ceil(sosActifs.length / SOS_PER_PAGE));
+    if (page > totalPages) page = totalPages;
+    const start = (page - 1) * SOS_PER_PAGE;
+    const items = sosActifs.slice(start, start + SOS_PER_PAGE);
 
-  container.querySelectorAll("[data-resolve-sos]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      try {
-        await marquerSosResolu(button.dataset.resolveSos);
-        showToast("Alerte marquée comme résolue.");
-        if (typeof onResolved === "function") await onResolved();
-      } catch (error) {
-        showToast(error.message, "error");
+    container.innerHTML = `
+      <h2 class="mb-4 flex items-center gap-2 text-lg font-black text-slate-950">
+        <i class="fa-solid fa-tower-broadcast text-rose-600"></i> Alertes de Paniques Actives (${sosActifs.length})
+      </h2>
+      ${sosActifs.length
+        ? items.map((s) => sosCard(s, pelerinNomResolver(s.pelerinId))).join("")
+        : `<p class="text-sm text-slate-400">Aucune alerte active pour le moment.</p>`
       }
+      <div data-sos-pagination>${pagination(page, totalPages)}</div>
+    `;
+
+    container.querySelectorAll("[data-resolve-sos]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        try {
+          await marquerSosResolu(button.dataset.resolveSos);
+          showToast("Alerte marquée comme résolue.");
+          if (typeof onResolved === "function") await onResolved();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      });
     });
-  });
+
+    bindPagination(container.querySelector("[data-sos-pagination]"), (p) => { page = p; draw(); });
+  };
+
+  draw();
 }
 // Bouton de déclenchement SOS — réutilisé sur le Dashboard ET sur "Mon Espace SOS"
 export function renderPelerinSosTrigger(containerId, pelerin, groupe, onTriggered) {
