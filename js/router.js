@@ -2,7 +2,6 @@ import { showToast } from "./components/toast.js";
 import { ROLES, HOME_PAGE_BY_ROLE } from "./config/roles.js";
 import { isAuthenticated, getUserRole } from "./utils/auth.js";
 
-import { renderAccueilPage } from "./pages/accueilPage.js";
 import { renderLoginPage } from "./pages/loginPage.js";
 import { renderMonGroupePage } from "./pages/monGroupePage.js";
 import { renderGroupesPage } from "./pages/groupesPage.js";
@@ -24,7 +23,6 @@ import { renderProfilProchePage } from "./pages/profilProchePage.js";
 import { renderArchivesPage } from "./pages/archivesPage.js";
 
 const routes = {
-  accueil: renderAccueilPage,
   login: renderLoginPage,
   groupes: renderGroupesPage,
   pelerins: renderPelerinsPage,
@@ -47,7 +45,7 @@ const routes = {
 
 };
 
-const PUBLIC_PAGES = ["accueil", "login"];
+const PUBLIC_PAGES = ["login"];
 
 const ROUTE_PERMISSIONS = {
   groupes: [ROLES.ADMIN],
@@ -85,7 +83,7 @@ export function setLayoutSync(fn) {
   layoutSync = fn;
 }
 
-const DEFAULT_PAGE = "accueil";
+const DEFAULT_PAGE = "login";
 
 export function getCurrentPageFromUrl() {
   const params = new URLSearchParams(window.location.search);

@@ -1,4 +1,4 @@
-// pages/loginPage.js
+// pages/loginPage.js — page de connexion en 2 colonnes (présentation + formulaire)
 import { login } from "../services/authService.js";
 import { navigate } from "../router.js";
 import { HOME_PAGE_BY_ROLE } from "../config/roles.js";
@@ -14,31 +14,55 @@ export function renderLoginPage() {
   const main = document.querySelector("main");
   main.className = "min-h-screen font-sans";
 
+  const atout = (icon, texte) => `
+    <li class="flex items-center gap-3">
+      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#BC7B3B]/20 text-[#BC7B3B]"><i class="fa-solid ${icon}"></i></span>
+      <span class="text-sm text-slate-200">${texte}</span>
+    </li>`;
+
   const app = document.getElementById("app");
   app.className = "";
   app.innerHTML = `
-    <div class="relative flex min-h-screen items-center justify-center bg-cover bg-center p-4"
-         style="background-image:url('./assets/CouvertureLogin.jpg');">
+    <div class="flex min-h-screen flex-col lg:grid lg:grid-cols-2">
 
-      <div class="w-full max-w-md overflow-hidden rounded-2xl bg-[#F2F2DE] shadow-2xl">
-
-        <div class="bg-[#333D2A] px-6 py-6 text-center text-white">
-          <button id="backToAccueilBtn" class="mb-3 flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white">
-            <i class="fa-solid fa-arrow-left"></i> Accueil
-          </button>
-          <i class="fa-solid fa-moon text-[#BC7B3B] text-2xl"></i>
-          <h1 class="mt-2 text-xl font-black">Portail Sakina Connect</h1>
-          <p class="mt-1 text-xs text-slate-300">Gestion sereine et organisation de la logistique physique</p>
+      <!-- Colonne gauche : présentation de Sakina Connect -->
+      <div class="relative flex flex-col justify-center overflow-hidden p-8 text-white lg:p-14"
+           style="background-image: linear-gradient(rgba(35,42,27,.82), rgba(35,42,27,.94)), url('./assets/CouvertureLogin.jpg'); background-size: cover; background-position: center;">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-moon text-2xl text-[#BC7B3B]"></i>
+          <span class="text-2xl font-black">Sakina <span class="text-[#BC7B3B]">Connect</span></span>
         </div>
 
-        <div class="border-t-4 border-[#BC7B3B] p-6">
+        <h1 class="mt-10 max-w-lg text-3xl font-black leading-tight lg:text-4xl">
+          La sérénité au cœur de votre pèlerinage
+        </h1>
+        <p class="mt-4 max-w-md text-slate-200">
+          Plateforme de gestion des voyages Omra &amp; Hajj : suivi des pèlerins et des groupes,
+          itinéraires, annonces et assistance SOS géolocalisée en temps réel.
+        </p>
 
-          <div id="loginError" class="mb-4 hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
+        <ul class="mt-10 grid max-w-md gap-3">
+          ${atout("fa-users", "Suivi des pèlerins, guides et groupes")}
+          ${atout("fa-route", "Itinéraires et rituels planifiés")}
+          ${atout("fa-triangle-exclamation", "Assistance SOS géolocalisée")}
+          ${atout("fa-hand-holding-heart", "Portail famille pour les proches")}
+        </ul>
+
+        <p class="mt-12 text-xs text-slate-400">Gestion sereine et organisation de la logistique physique.</p>
+      </div>
+
+      <!-- Colonne droite : formulaire de connexion -->
+      <div class="flex items-center justify-center bg-[#F2F2DE] p-6 sm:p-10 lg:p-14">
+        <div class="w-full max-w-md">
+          <h2 class="text-2xl font-black text-[#333D2A]">Connexion</h2>
+          <p class="mt-1 text-sm text-slate-500">Accédez à votre espace personnel.</p>
+
+          <div id="loginError" class="mt-6 hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
             <i class="fa-solid fa-circle-exclamation mr-2"></i>
             <span id="loginErrorMessage"></span>
           </div>
 
-          <div class="grid gap-4">
+          <div class="mt-6 grid gap-4">
             <div>
               <label class="mb-1 block text-xs font-bold text-[#333D2A]" for="loginEmail">Adresse email :</label>
               <input class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#BC7B3B] focus:ring-2 focus:ring-[#BC7B3B]/30" type="email" id="loginEmail" placeholder="nom@gmail.com" autocomplete="email" />
@@ -62,6 +86,7 @@ export function renderLoginPage() {
           </div>
         </div>
       </div>
+
     </div>
   `;
 
@@ -74,9 +99,6 @@ function bindLoginEvents() {
   const loginBtn = document.getElementById("loginBtn");
   const toggleBtn = document.getElementById("togglePassword");
   const toggleIcon = document.getElementById("togglePasswordIcon");
-  const backBtn = document.getElementById("backToAccueilBtn");
-
-  backBtn.addEventListener("click", () => navigate("accueil"));
 
   toggleBtn.addEventListener("click", () => {
     const isPassword = passwordInput.type === "password";
@@ -133,7 +155,7 @@ async function handleLogin() {
 
   try {
     const user = await login(email, password);
-    await navigate(HOME_PAGE_BY_ROLE[user.role] || "accueil");
+    await navigate(HOME_PAGE_BY_ROLE[user.role] || "login");
   } catch (error) {
     document.getElementById("loginErrorMessage").textContent = error.message;
     document.getElementById("loginError").classList.remove("hidden");
