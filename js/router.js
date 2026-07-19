@@ -13,6 +13,7 @@ import { renderDashboardPelerinPage } from "./pages/dashboardPelerinPage.js";
 import { renderMonPoleUrgencePage } from "./pages/monPoleUrgencePage.js";
 import { renderItinerairePage } from "./pages/itinerairePage.js";
 import { renderGuidesPage } from "./pages/guidesPage.js";
+import { renderAnnoncePage } from "./pages/annoncePage.js";
 
 const routes = {
   accueil: renderAccueilPage,
@@ -20,6 +21,7 @@ const routes = {
   groupes: renderGroupesPage,
   pelerins: renderPelerinsPage,
   "annuaire-guides": renderGuidesPage,
+  annonces: renderAnnoncePage,
   "mon-groupe": renderMonGroupePage,
    "dashboard-pelerin": renderDashboardPelerinPage,
   "pole-urgence": renderPoleUrgencePage,
@@ -35,6 +37,7 @@ const ROUTE_PERMISSIONS = {
   groupes: [ROLES.ADMIN],
   pelerins: [ROLES.ADMIN],
   "annuaire-guides": [ROLES.ADMIN],
+  annonces: [ROLES.ADMIN, ROLES.GUIDE, ROLES.PELERIN],
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],
   "pole-urgence": [ROLES.ADMIN],

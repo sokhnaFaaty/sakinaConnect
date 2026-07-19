@@ -3,7 +3,10 @@ import { renderSosPanel } from "../components/sosPanel.js";
 import { getSos } from "../services/sosService.js";
 import { getPelerins } from "../services/pelerinService.js";
 import { getUtilisateurs } from "../services/utilisateurService.js";
+import { pagination, bindPagination } from "../components/pagination.js";
 import { escapeHtml } from "../utils/html.js";
+
+const RESOLUS_PER_PAGE = 3;
 
 // Données fixes, utiles à la maquette — pas liées à une entité du diagramme de classes
 const NUMEROS_URGENCE = [

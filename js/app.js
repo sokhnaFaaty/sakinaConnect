@@ -2,7 +2,14 @@ import { renderSidebar } from "./components/sideBar.js";
 import { renderNavbar, bindNavbar } from "./components/navBar.js";
 import { navigate, getCurrentPageFromUrl, setLayoutSync } from "./router.js";
 import { initConfirmModal } from "./components/confirmModal.js";
-import { isAuthenticated } from "./utils/auth.js";
+import { isAuthenticated, getUserRole } from "./utils/auth.js";
+
+// Le bouton "Urgence SOS" du sidebar mène au Pôle d'Urgence adapté au rôle
+const POLE_URGENCE_BY_ROLE = {
+  ADMIN: "pole-urgence",
+  GUIDE: "mon-pole-urgence",
+  PELERIN: "pole-urgence-pelerin",
+};
 
 function mountLayout() {
   document.getElementById("sidebarRoot").innerHTML = renderSidebar();
@@ -55,6 +62,17 @@ function initSidebar() {
   });
 
   overlay.addEventListener("click", close);
+
+  // Bouton "Urgence SOS" : navigue vers le Pôle d'Urgence selon le rôle
+  const sosBtn = document.getElementById("sosBtn");
+  if (sosBtn) {
+    sosBtn.addEventListener("click", async () => {
+      const dest = POLE_URGENCE_BY_ROLE[getUserRole()];
+      if (!dest) return;
+      await navigate(dest);
+      if (window.innerWidth < 1024) close();
+    });
+  }
 
   return { close };
 }

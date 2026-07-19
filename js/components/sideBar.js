@@ -6,15 +6,18 @@ const NAV_LINKS_BY_ROLE = {
     { page: "groupes", label: "Liste des Groupes", icon: "fa-people-group" },
     { page: "pelerins", label: "Liste des Pèlerins", icon: "fa-users" },
       { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
+    { page: "annonces", label: "Tableau d'affichage", icon: "fa-bullhorn" },
     { page: "pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
   GUIDE: [
     { page: "mon-groupe", label: "Mon groupe", icon: "fa-users" },
       { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
+    { page: "annonces", label: "Tableau d'annonces", icon: "fa-bullhorn" },
   { page: "mon-pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
   PELERIN: [
     { page: "dashboard-pelerin", label: "Tableau de Bord", icon: "fa-gauge" },
+    { page: "annonces", label: "Tableau d'annonces", icon: "fa-bullhorn" },
     { page: "pole-urgence-pelerin", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
   PROCHE: [],
