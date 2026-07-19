@@ -47,7 +47,7 @@ export function openDrawer({
 
       <div class="flex justify-end gap-3 border-t border-slate-100 px-6 py-4">
         <button type="button" data-drawer-cancel class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">${cancelLabel}</button>
-        <button type="button" data-drawer-submit class="rounded-2xl bg-[#333D2A] px-5 py-2.5 text-sm font-extrabold text-white hover:opacity-90">${confirmLabel}</button>
+        <button type="button" data-drawer-submit class="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-extrabold text-white ${confirmClass}">${confirmIcon ? `<i class="fa-solid ${confirmIcon}"></i>` : ""}<span>${confirmLabel}</span></button>
       </div>
     </div>
   `;

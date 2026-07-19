@@ -1,9 +1,8 @@
 import { renderSidebar } from "./components/sideBar.js";
-import { renderNavbar } from "./components/navBar.js";
+import { renderNavbar, bindNavbar } from "./components/navBar.js";
 import { navigate, getCurrentPageFromUrl, setLayoutSync } from "./router.js";
 import { initConfirmModal } from "./components/confirmModal.js";
 import { isAuthenticated } from "./utils/auth.js";
-import { logout } from "./services/authService.js";
 
 let layoutMounted = false;
 
@@ -26,8 +25,7 @@ function ensureLayout() {
 
     if (!layoutMounted) {
       mountLayout();
-      const logoutBtn = document.getElementById("logoutBtn");
-      if (logoutBtn) logoutBtn.addEventListener("click", logout);
+      bindNavbar();
       const sidebar = initSidebar();
       initNavigation(sidebar);
       layoutMounted = true;
