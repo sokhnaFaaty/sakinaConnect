@@ -1,6 +1,6 @@
 import { renderSidebar } from "./components/sideBar.js";
 import { renderNavbar, bindNavbar } from "./components/navBar.js";
-import { navigate, getCurrentPageFromUrl, setLayoutSync } from "./router.js";
+import { navigate, getCurrentPageFromUrl, setLayoutSync, onHashChange } from "./router.js";
 import { initConfirmModal } from "./components/confirmModal.js";
 import { isAuthenticated, getUserRole } from "./utils/auth.js";
 
@@ -96,9 +96,9 @@ function startApp() {
 
   navigate(getCurrentPageFromUrl(), false);
 
-  window.addEventListener("popstate", () => {
-    navigate(getCurrentPageFromUrl(), false);
-  });
+  // La navigation passe désormais par le hash de l'URL (#/groupes).
+  // On réagit à chaque changement de hash (retour navigateur, lien, saisie manuelle).
+  window.addEventListener("hashchange", onHashChange);
 }
 
 startApp();
