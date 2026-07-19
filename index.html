@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sakina Connect</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Idiqlat&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+          sans: ["Poppins", "ui-sans-serif", "system-ui", "sans-serif"],
+          display: ["Idiqlat", "serif"]
+        },
+
+          boxShadow: {
+            soft: "0 20px 60px rgba(15, 23, 42, 0.12)"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-[#F2F2DE] font-sans text-slate-900">
+  <div id="sidebarRoot"></div>
+  <div id="navbarRoot"></div>
+
+  <main class="min-h-screen pt-16 lg:pl-72">
+    <div id="app" class="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8"></div>
+  </main>
+
+  <div id="toast" class="pointer-events-none fixed right-5 top-20 z-[100] hidden max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-2xl"></div>
+
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-slate-950/60 p-4" aria-hidden="true">
+    <div class="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+      <p id="confirmModalMessage" class="text-sm text-slate-700"></p>
+      <div class="mt-5 flex justify-end gap-3">
+        <button id="confirmCancelBtn" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button id="confirmAcceptBtn" class="rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-rose-700">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
