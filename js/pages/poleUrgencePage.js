@@ -50,6 +50,7 @@ export async function renderPoleUrgencePage() {
           <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-base font-black text-slate-950">Registre des Cas Résolus</h2>
             <div id="casResolusContainer" class="grid gap-3"></div>
+            <div id="casResolusPagination"></div>
           </article>
         </div>
       </div>
@@ -75,9 +76,7 @@ async function chargerEtAfficher() {
 
   renderSosPanel("sosPanelContainer", sosActifs, nomResolver, chargerEtAfficher);
 
-  const casResolusEl = document.getElementById("casResolusContainer");
-  casResolusEl.innerHTML = sosResolus.length
-    ? sosResolus.map((s) => `
+  const resolusCard = (s) => `
         <div class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
           <div class="mb-1 flex items-center justify-between">
             <span class="text-xs font-bold text-slate-400">${escapeHtml(s.id.slice(0, 6).toUpperCase())}</span>
@@ -85,7 +84,20 @@ async function chargerEtAfficher() {
           </div>
           <p class="text-sm font-bold text-slate-800">${escapeHtml(nomResolver(s.pelerinId))}</p>
           <p class="mt-1 text-xs text-slate-500">${escapeHtml(s.commentaire || "Aucun commentaire.")}</p>
-        </div>
-      `).join("")
-    : `<p class="text-sm text-slate-400">Aucun cas résolu pour l'instant.</p>`;
+        </div>`;
+
+  let resolusPage = 1;
+  const drawResolus = () => {
+    const totalPages = Math.max(1, Math.ceil(sosResolus.length / RESOLUS_PER_PAGE));
+    if (resolusPage > totalPages) resolusPage = totalPages;
+    const start = (resolusPage - 1) * RESOLUS_PER_PAGE;
+    const items = sosResolus.slice(start, start + RESOLUS_PER_PAGE);
+    document.getElementById("casResolusContainer").innerHTML = sosResolus.length
+      ? items.map(resolusCard).join("")
+      : `<p class="text-sm text-slate-400">Aucun cas résolu pour l'instant.</p>`;
+    const pagEl = document.getElementById("casResolusPagination");
+    pagEl.innerHTML = pagination(resolusPage, totalPages);
+    bindPagination(pagEl, (p) => { resolusPage = p; drawResolus(); });
+  };
+  drawResolus();
 }
