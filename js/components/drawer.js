@@ -18,6 +18,8 @@ export function openDrawer({
   icon = "fa-circle-info",
   body = "",
   confirmLabel = "Enregistrer",
+  confirmIcon = null,
+  confirmClass = "bg-[#333D2A] hover:opacity-90",
   cancelLabel = "Annuler",
   onConfirm = null,
   onMount = null,
