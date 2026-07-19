@@ -3,6 +3,7 @@ import { pageHeader } from "../components/pageHeader.js";
 import { renderTable } from "../components/table.js";
 import { openModal, openConfirm } from "../components/modal.js";
 import { openDrawer } from "../components/drawer.js";
+import { viewToggle, bindViewToggle, getSavedView, saveView } from "../components/viewToogle.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
@@ -221,6 +222,58 @@ export async function renderGroupesPage() {
     }
   });
 
+  const guideNom = (g) => {
+    const guide = guides.find((guide) => guide.id === g.guideId);
+    return utilisateurMap[guide?.utilisateurId]?.nomComplet || "-";
+  };
+
+  const actionsHtml = (g) => `
+    <button class="text-slate-500 hover:text-slate-800" data-view-pelerins="${escapeHtml(g.id)}" title="Voir">
+      <i class="fa-solid fa-eye"></i>
+    </button>
+    <button class="text-indigo-500 hover:text-indigo-700" data-edit="${escapeHtml(g.id)}" title="Modifier">
+      <i class="fa-solid fa-pen"></i>
+    </button>
+    <button class="text-rose-500 hover:text-rose-700" data-delete="${escapeHtml(g.id)}" title="Supprimer">
+      <i class="fa-solid fa-trash"></i>
+    </button>`;
+
+  const tableHtml = () => `
+    <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      ${renderTable({
+        rows: groupes,
+        emptyMessage: "Aucun groupe enregistré.",
+        columns: [
+          { label: "ID", render: (g) => `<span class="text-xs font-bold text-slate-400">${escapeHtml(g.id.slice(0, 6).toUpperCase())}</span>` },
+          { label: "Nom du groupe", render: (g) => `<strong class="font-bold text-slate-950">${escapeHtml(g.nom)}</strong>` },
+          { label: "Guide responsable", render: (g) => escapeHtml(guideNom(g)) },
+          { label: "Nombre de pèlerins", render: (g) => `${nbPelerinsParGroupe[g.id] || 0} pèlerins` },
+          { label: "Actions", render: (g) => `<div class="flex items-center gap-3 text-base">${actionsHtml(g)}</div>` },
+        ],
+      })}
+    </article>`;
+
+  const cardsHtml = () => groupes.length
+    ? `<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        ${groupes.map((g) => `
+          <article class="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex-1 p-5">
+              <div class="mb-2 flex items-start justify-between gap-2">
+                <h3 class="font-black text-slate-950">${escapeHtml(g.nom)}</h3>
+                <span class="rounded-md bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">${escapeHtml(g.id.slice(0, 6).toUpperCase())}</span>
+              </div>
+              <div class="mt-3 grid gap-2 text-sm text-slate-600">
+                <p class="flex items-center gap-2"><i class="fa-solid fa-user-tie w-4 text-[#333D2A]"></i> ${escapeHtml(guideNom(g))}</p>
+                <p class="flex items-center gap-2"><i class="fa-solid fa-users w-4 text-[#333D2A]"></i> ${nbPelerinsParGroupe[g.id] || 0} pèlerins</p>
+                <p class="flex items-center gap-2"><i class="fa-solid fa-plane-departure w-4 text-[#333D2A]"></i> ${escapeHtml(g.dateDepart || "-")} → ${escapeHtml(g.dateRetour || "-")}</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 bg-[#F2F2DE]/70 px-5 py-3 text-base">${actionsHtml(g)}</div>
+          </article>
+        `).join("")}
+      </div>`
+    : `<div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm">Aucun groupe enregistré.</div>`;
+
   app.innerHTML = `
     <section>
       ${pageHeader({
@@ -231,50 +284,25 @@ export async function renderGroupesPage() {
         actionId: "addGroupeBtn",
         actionIcon: "fa-plus",
       })}
-
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-${renderTable({
-  rows: groupes,
-  emptyMessage: "Aucun groupe enregistré.",
-  columns: [
-    { label: "ID", render: (g) => `<span class="text-xs font-bold text-slate-400">${escapeHtml(g.id.slice(0, 6).toUpperCase())}</span>` },
-    { label: "Nom du groupe", render: (g) => `<strong class="font-bold text-slate-950">${escapeHtml(g.nom)}</strong>` },
-    {
-      label: "Guide responsable",
-      render: (g) => {
-        const guide = guides.find((guide) => guide.id === g.guideId);
-        const nom = guide ? utilisateurMap[guide.utilisateurId]?.nomComplet : "-";
-        return escapeHtml(nom || "-");
-      },
-    },
-    { label: "Nombre de pèlerins", render: (g) => `${nbPelerinsParGroupe[g.id] || 0} pèlerins` },
-    {
-      label: "Actions",
-      render: (g) => `
-        <div class="flex items-center gap-3 text-base">
-          <button class="text-slate-500 hover:text-slate-800" data-view-pelerins="${escapeHtml(g.id)}" title="Voir">
-            <i class="fa-solid fa-eye"></i>
-          </button>
-          <button class="text-indigo-500 hover:text-indigo-700" data-edit="${escapeHtml(g.id)}" title="Modifier">
-            <i class="fa-solid fa-pen"></i>
-          </button>
-          <button class="text-rose-500 hover:text-rose-700" data-delete="${escapeHtml(g.id)}" title="Supprimer">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      `,
-    },
-  ],
-})}      </article>
+      <div class="mb-4 flex justify-end" id="grpToggle"></div>
+      <div id="grpList"></div>
     </section>
   `;
 
-  bindGroupeEvents(groupes, guides, hotels, pelerins, utilisateurMap);
-}
-
-function bindGroupeEvents(groupes, guides, hotels, pelerins, utilisateurMap) {
   document.getElementById("addGroupeBtn").addEventListener("click", () => openGroupeForm(null, guides, hotels, utilisateurMap));
 
+  let view = getSavedView("groupes", "table");
+  const draw = () => {
+    const toggleEl = document.getElementById("grpToggle");
+    toggleEl.innerHTML = viewToggle(view);
+    document.getElementById("grpList").innerHTML = view === "card" ? cardsHtml() : tableHtml();
+    bindViewToggle(toggleEl, (v) => { view = v; saveView("groupes", v); draw(); });
+    bindGroupeRowEvents(groupes, guides, hotels, pelerins, utilisateurMap);
+  };
+  draw();
+}
+
+function bindGroupeRowEvents(groupes, guides, hotels, pelerins, utilisateurMap) {
   document.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
       const groupe = groupes.find((g) => g.id === button.dataset.edit);
@@ -282,31 +310,31 @@ function bindGroupeEvents(groupes, guides, hotels, pelerins, utilisateurMap) {
     });
   });
 
-  
   document.querySelectorAll("[data-view-pelerins]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const groupe = groupes.find((g) => g.id === button.dataset.viewPelerins);
-    if (groupe) openGroupeDetail(groupe, guides, hotels, pelerins, utilisateurMap);
-  });
-});
-
-document.querySelectorAll("[data-delete]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const id = button.dataset.delete;
-    const groupe = groupes.find((g) => g.id === id);
-    openConfirm({
-      title: "Confirmer la suppression",
-      message: `Êtes-vous sûr de vouloir supprimer le groupe<br/><strong>${escapeHtml(groupe?.nom || "")}</strong> ?`,
-      onConfirm: async () => {
-        try {
-          await deleteGroupe(id);
-          showToast("Groupe supprimé.");
-          await renderGroupesPage();
-        } catch (error) {
-          showToast(error.message, "error");
-        }
-      },
+    button.addEventListener("click", () => {
+      const groupe = groupes.find((g) => g.id === button.dataset.viewPelerins);
+      if (groupe) openGroupeDetail(groupe, guides, hotels, pelerins, utilisateurMap);
     });
   });
-});
+
+  document.querySelectorAll("[data-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.delete;
+      const groupe = groupes.find((g) => g.id === id);
+      openConfirm({
+        title: "Confirmer la suppression",
+        message: `Êtes-vous sûr de vouloir supprimer le groupe<br/><strong>${escapeHtml(groupe?.nom || "")}</strong> ?`,
+        onConfirm: async () => {
+          try {
+            await deleteGroupe(id);
+            showToast("Groupe supprimé.");
+            await renderGroupesPage();
+          } catch (error) {
+            showToast(error.message, "error");
+          }
+        },
+      });
+    });
+  });
 }
+
