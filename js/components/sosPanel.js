@@ -15,7 +15,7 @@ function sosCard(sos, pelerinNom) {
   return `
     <div class="mb-3 rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-4">
       <div class="mb-2 flex items-center justify-between">
-        <span class="rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-black text-white">${escapeHtml(sos.idSOS.slice(0, 6).toUpperCase())}</span>
+        <span class="rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-black text-white">${escapeHtml(sos.id.slice(0, 6).toUpperCase())}</span>
         <span class="text-xs text-slate-400"><i class="fa-regular fa-clock"></i> ${tempsEcoule(sos.dateHeure)}</span>
       </div>
       <p class="font-black text-slate-900">${escapeHtml(pelerinNom)}</p>
@@ -23,7 +23,7 @@ function sosCard(sos, pelerinNom) {
         <i class="fa-solid fa-location-dot"></i> ${sos.latitude.toFixed(4)}, ${sos.longitude.toFixed(4)}
       </p>
       ${sos.commentaire ? `<p class="mt-2 text-sm italic text-slate-600">"${escapeHtml(sos.commentaire)}"</p>` : ""}
-      <button data-resolve-sos="${escapeHtml(sos.idSOS)}" class="mt-3 rounded-xl bg-[#333D2A] px-4 py-2 text-xs font-bold text-white transition hover:opacity-90">
+      <button data-resolve-sos="${escapeHtml(sos.id)}" class="mt-3 rounded-xl bg-[#333D2A] px-4 py-2 text-xs font-bold text-white transition hover:opacity-90">
         Marquer Résolu
       </button>
     </div>
@@ -88,7 +88,7 @@ export function renderPelerinSosTrigger(containerId, pelerin, groupe, onTriggere
       onConfirm: async () => {
         try {
           await declencherSos({
-            pelerinId: pelerin.idPelerin,
+            pelerinId: pelerin.id,
             guideId: groupe?.guideId || null,
             commentaire: "",
           });

@@ -53,11 +53,11 @@ export async function createPelerin(data) {
   const nouvelUtilisateur = {
     id: utilisateurId,
     nomComplet: String(data.nomComplet).trim(),
-    email: "",
-    telephone: "",
+    email: data.email ? String(data.email).trim() : "",
+    telephone: data.telephone ? String(data.telephone).trim() : "",
     motDePasse: motDePasseGenere,
     role: "PELERIN",
-    photo: "",
+    photo: data.photo || "",
     dateCreation: new Date().toISOString().slice(0, 10),
   };
 

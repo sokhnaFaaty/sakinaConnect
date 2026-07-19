@@ -28,7 +28,7 @@ export async function renderDashboardPelerinPage() {
     getSosActifDuPelerin(pelerin.id),
   ]);
 
-  const groupe = groupes.find((g) => g.idGroupe === pelerin.groupeId);
+  const groupe = groupes.find((g) => g.id === pelerin.groupeId);
   const guide = groupe ? guides.find((g) => g.id === groupe.guideId) : null;
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
   const guideUtilisateur = guide ? utilisateurMap[guide.utilisateurId] : null;

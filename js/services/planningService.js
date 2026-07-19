@@ -21,7 +21,7 @@ export async function createPlanningEvent(data) {
   required(data.groupeId, "Le groupe est obligatoire.");
 
   const evenement = {
-    idPlanning: createId("pl"),
+    id: createId("pl"),
     titre: data.titre,
     description: data.description || "",
     date: data.date,
@@ -41,7 +41,7 @@ export async function createPlanningEvent(data) {
   );
 }
 
-export async function updatePlanningEvent(idPlanning, data) {
+export async function updatePlanningEvent(id, data) {
   required(data.titre, "Le titre de l'événement est obligatoire.");
   required(data.date, "La date est obligatoire.");
   required(data.heure, "L'heure est obligatoire.");
@@ -49,7 +49,7 @@ export async function updatePlanningEvent(idPlanning, data) {
   required(data.categorieId, "La catégorie est obligatoire.");
 
   return apiRequest(
-    `${ENDPOINTS.planning}/${idPlanning}`,
+    `${ENDPOINTS.planning}/${id}`,
     {
       method: "PATCH",
       body: JSON.stringify({
@@ -68,9 +68,9 @@ export async function updatePlanningEvent(idPlanning, data) {
   );
 }
 
-export async function deletePlanningEvent(idPlanning) {
+export async function deletePlanningEvent(id) {
   return apiRequest(
-    `${ENDPOINTS.planning}/${idPlanning}`,
+    `${ENDPOINTS.planning}/${id}`,
     { method: "DELETE" },
     "Impossible de supprimer l'événement."
   );
