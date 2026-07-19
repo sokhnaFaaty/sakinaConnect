@@ -6,6 +6,9 @@ import { getGuides, getGuideByUtilisateurId } from "../services/guideService.js"
 import { getUtilisateurs } from "../services/utilisateurService.js";
 import { getSos, getSosActifDuPelerin } from "../services/sosService.js";
 import { renderPelerinSosTrigger, renderPelerinSosActif } from "../components/sosPanel.js";
+import { pagination, bindPagination } from "../components/pagination.js";
+
+const RESOLUS_PER_PAGE = 1;
 
 const NUMEROS_URGENCE = [
   { nom: "Secours National Saoudien", detail: "Aide Générale et Sécurité", numero: "911" },
@@ -56,18 +59,8 @@ export async function renderPoleUrgencePelerinPage() {
 
           <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-base font-black text-slate-950">Mes SOS Précédents Résolus (${mesSosResolus.length})</h2>
-            ${mesSosResolus.length
-              ? mesSosResolus.map((s) => `
-                  <div class="mb-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 last:mb-0">
-                    <div class="mb-1 flex items-center justify-between">
-                      <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-black text-slate-600">${escapeHtml(s.id.slice(0, 6).toUpperCase())}</span>
-                      <span class="text-xs text-slate-400">${new Date(s.dateHeure).toLocaleString("fr-FR")}</span>
-                    </div>
-                    <p class="flex items-center gap-1 text-sm text-slate-600"><i class="fa-solid fa-location-dot"></i> ${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}</p>
-                  </div>
-                `).join("")
-              : `<p class="text-sm text-slate-400">Aucun SOS résolu pour l'instant.</p>`
-            }
+            <div id="mesSosResolusList"></div>
+            <div id="mesSosResolusPagination"></div>
           </article>
         </div>
 
@@ -112,12 +105,36 @@ export async function renderPoleUrgencePelerinPage() {
     </section>
   `;
 
-  afficherZonePrincipale(pelerin, groupe, sosActif, guideUtilisateur?.nomComplet || "Non assigné");
+  // Mes SOS Précédents Résolus — paginés (1 par page pour ne pas déborder)
+  const resolusCard = (s) => `
+    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+      <div class="mb-1 flex items-center justify-between">
+        <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-black text-slate-600">${escapeHtml(s.id.slice(0, 6).toUpperCase())}</span>
+        <span class="text-xs text-slate-400">${new Date(s.dateHeure).toLocaleString("fr-FR")}</span>
+      </div>
+      <p class="flex items-center gap-1 text-sm text-slate-600"><i class="fa-solid fa-location-dot"></i> ${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}</p>
+    </div>`;
+
+  let resolusPage = 1;
+  const drawResolus = () => {
+    const totalPages = Math.max(1, Math.ceil(mesSosResolus.length / RESOLUS_PER_PAGE));
+    if (resolusPage > totalPages) resolusPage = totalPages;
+    const items = mesSosResolus.slice((resolusPage - 1) * RESOLUS_PER_PAGE, resolusPage * RESOLUS_PER_PAGE);
+    document.getElementById("mesSosResolusList").innerHTML = mesSosResolus.length
+      ? items.map(resolusCard).join("")
+      : `<p class="text-sm text-slate-400">Aucun SOS résolu pour l'instant.</p>`;
+    const pagEl = document.getElementById("mesSosResolusPagination");
+    pagEl.innerHTML = pagination(resolusPage, totalPages);
+    bindPagination(pagEl, (p) => { resolusPage = p; drawResolus(); });
+  };
+  drawResolus();
+
+  afficherZonePrincipale(pelerin, groupe, sosActif, guideUtilisateur?.nomComplet || "Non assigné", guideUtilisateur?.telephone || "");
 }
 
-async function afficherZonePrincipale(pelerin, groupe, sosActif, guideNom) {
+async function afficherZonePrincipale(pelerin, groupe, sosActif, guideNom, guideTelephone) {
   if (sosActif) {
-    renderPelerinSosActif("sosMainZone", sosActif, guideNom);
+    renderPelerinSosActif("sosMainZone", sosActif, guideNom, guideTelephone);
   } else {
     renderPelerinSosTrigger("sosMainZone", pelerin, groupe, async () => {
       await renderPoleUrgencePelerinPage();

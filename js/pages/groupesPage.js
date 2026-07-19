@@ -323,11 +323,11 @@ function bindGroupeRowEvents(groupes, guides, hotels, pelerins, utilisateurMap) 
       const groupe = groupes.find((g) => g.id === id);
       openConfirm({
         title: "Confirmer la suppression",
-        message: `Êtes-vous sûr de vouloir supprimer le groupe<br/><strong>${escapeHtml(groupe?.nom || "")}</strong> ?`,
+        message: `Êtes-vous sûr de vouloir supprimer le groupe<br/><strong>${escapeHtml(groupe?.nom || "")}</strong> ?<br/><span class="text-xs text-amber-600">Il sera archivé et pourra être restauré.</span>`,
         onConfirm: async () => {
           try {
             await deleteGroupe(id);
-            showToast("Groupe supprimé.");
+            showToast("Groupe archivé.");
             await renderGroupesPage();
           } catch (error) {
             showToast(error.message, "error");

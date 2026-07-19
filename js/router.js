@@ -14,6 +14,14 @@ import { renderMonPoleUrgencePage } from "./pages/monPoleUrgencePage.js";
 import { renderItinerairePage } from "./pages/itinerairePage.js";
 import { renderGuidesPage } from "./pages/guidesPage.js";
 import { renderAnnoncePage } from "./pages/annoncePage.js";
+import { renderDashboardAdminPage } from "./pages/dashboardAdminPage.js";
+import { renderDashboardGuidePage } from "./pages/dashboardGuidePage.js";
+import { renderDashboardProchePage } from "./pages/dashboardProchePage.js";
+import { renderProfilPelerinPage } from "./pages/profilPelerinPage.js";
+import { renderMonGroupePelerinPage } from "./pages/monGroupePelerinPage.js";
+import { renderSuiviFamilialPage } from "./pages/suiviFamilialPage.js";
+import { renderProfilProchePage } from "./pages/profilProchePage.js";
+import { renderArchivesPage } from "./pages/archivesPage.js";
 
 const routes = {
   accueil: renderAccueilPage,
@@ -22,6 +30,14 @@ const routes = {
   pelerins: renderPelerinsPage,
   "annuaire-guides": renderGuidesPage,
   annonces: renderAnnoncePage,
+  "dashboard-admin": renderDashboardAdminPage,
+  "dashboard-guide": renderDashboardGuidePage,
+  "dashboard-proche": renderDashboardProchePage,
+  "suivi-familial": renderSuiviFamilialPage,
+  "mon-profil-proche": renderProfilProchePage,
+  archives: renderArchivesPage,
+  "mon-profil": renderProfilPelerinPage,
+  "mon-groupe-pelerin": renderMonGroupePelerinPage,
   "mon-groupe": renderMonGroupePage,
    "dashboard-pelerin": renderDashboardPelerinPage,
   "pole-urgence": renderPoleUrgencePage,
@@ -38,12 +54,20 @@ const ROUTE_PERMISSIONS = {
   pelerins: [ROLES.ADMIN],
   "annuaire-guides": [ROLES.ADMIN],
   annonces: [ROLES.ADMIN, ROLES.GUIDE, ROLES.PELERIN],
+  "dashboard-admin": [ROLES.ADMIN],
+  "dashboard-guide": [ROLES.GUIDE],
+  "dashboard-proche": [ROLES.PROCHE],
+  "suivi-familial": [ROLES.PROCHE],
+  "mon-profil-proche": [ROLES.PROCHE],
+  "mon-profil": [ROLES.PELERIN],
+  archives: [ROLES.ADMIN],
+  "mon-groupe-pelerin": [ROLES.PELERIN],
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],
   "pole-urgence": [ROLES.ADMIN],
   "mon-pole-urgence": [ROLES.GUIDE],
     "pole-urgence-pelerin": [ROLES.PELERIN],
-      "itineraire": [ROLES.GUIDE,ROLES.ADMIN],
+      "itineraire": [ROLES.GUIDE, ROLES.ADMIN, ROLES.PELERIN],
 
 
 

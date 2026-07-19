@@ -2,14 +2,17 @@ import { getUserRole } from "../utils/auth.js";
 
 const NAV_LINKS_BY_ROLE = {
   ADMIN: [
+    { page: "dashboard-admin", label: "Tableau de Bord", icon: "fa-gauge" },
     { page: "annuaire-guides", label: "Annuaire des Guides", icon: "fa-user-tie" },
     { page: "groupes", label: "Liste des Groupes", icon: "fa-people-group" },
     { page: "pelerins", label: "Liste des Pèlerins", icon: "fa-users" },
       { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
     { page: "annonces", label: "Tableau d'affichage", icon: "fa-bullhorn" },
     { page: "pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
+    { page: "archives", label: "Liste des Archives", icon: "fa-box-archive" },
   ],
   GUIDE: [
+    { page: "dashboard-guide", label: "Tableau de Bord", icon: "fa-gauge" },
     { page: "mon-groupe", label: "Mon groupe", icon: "fa-users" },
       { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
     { page: "annonces", label: "Tableau d'annonces", icon: "fa-bullhorn" },
@@ -17,10 +20,17 @@ const NAV_LINKS_BY_ROLE = {
   ],
   PELERIN: [
     { page: "dashboard-pelerin", label: "Tableau de Bord", icon: "fa-gauge" },
+    { page: "mon-profil", label: "Mon profil", icon: "fa-user" },
+    { page: "mon-groupe-pelerin", label: "Mon groupe", icon: "fa-users" },
+    { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
     { page: "annonces", label: "Tableau d'annonces", icon: "fa-bullhorn" },
     { page: "pole-urgence-pelerin", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
   ],
-  PROCHE: [],
+  PROCHE: [
+    { page: "dashboard-proche", label: "Tableau de Bord", icon: "fa-gauge" },
+    { page: "suivi-familial", label: "Suivi Familial", icon: "fa-heart" },
+    { page: "mon-profil-proche", label: "Mon profil", icon: "fa-user" },
+  ],
 };
 
 export function renderSidebar() {
@@ -42,12 +52,14 @@ export function renderSidebar() {
         ${items}
       </nav>
 
+      ${role !== "PROCHE" ? `
       <div class="absolute bottom-5 w-full px-5 grid gap-3">
         <button id="sosBtn" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#B40909] px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span>Urgence SOS</span>
         </button>
       </div>
+      ` : ""}
     </aside>
 
     <div id="sidebarOverlay" class="fixed inset-0 z-30 hidden bg-slate-950/40 backdrop-blur-sm lg:hidden"></div>

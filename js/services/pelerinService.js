@@ -16,20 +16,29 @@ function normalizePelerin(data) {
     contactUrgenceNom: String(data.contactUrgenceNom).trim(),
     contactUrgenceTelephone: String(data.contactUrgenceTelephone).trim(),
     groupeId: data.groupeId || null,
+    isActive: data.isActive !== false,
   };
 }
 
 export async function getPelerins() {
-  return apiRequest(ENDPOINTS.pelerins, {}, "Impossible de charger les pèlerins.");
+  const pelerins = await apiRequest(ENDPOINTS.pelerins, {}, "Impossible de charger les pèlerins.");
+  return pelerins.filter((p) => p.isActive !== false);
 }
 
-// Récupère uniquement les pèlerins d'un groupe donné (utile pour "Mon groupe" côté Guide)
+// Pèlerins archivés (soft delete) — pour la page Archives
+export async function getPelerinsArchives() {
+  const pelerins = await apiRequest(ENDPOINTS.pelerins, {}, "Impossible de charger les pèlerins archivés.");
+  return pelerins.filter((p) => p.isActive === false);
+}
+
+// Récupère uniquement les pèlerins actifs d'un groupe donné (utile pour "Mon groupe" côté Guide)
 export async function getPelerinsDuGroupe(groupeId) {
-  return apiRequest(
+  const pelerins = await apiRequest(
     `${ENDPOINTS.pelerins}?groupeId=${groupeId}`,
     {},
     "Impossible de charger les pèlerins du groupe."
   );
+  return pelerins.filter((p) => p.isActive !== false);
 }
 
 /**
@@ -59,6 +68,7 @@ export async function createPelerin(data) {
     role: "PELERIN",
     photo: data.photo || "",
     dateCreation: new Date().toISOString().slice(0, 10),
+    isActive: true,
   };
 
   await apiRequest(
@@ -107,12 +117,31 @@ export async function updatePelerin(id, data) {
   );
 }
 
+// Soft delete : archive la fiche pèlerin ET son compte utilisateur lié
 export async function deletePelerin(id) {
-  return apiRequest(
-    `${ENDPOINTS.pelerins}/${id}`,
-    { method: "DELETE" },
-    "Impossible de supprimer le pèlerin."
-  );
+  const pelerin = await apiRequest(`${ENDPOINTS.pelerins}/${id}`, {}, "Impossible de charger le pèlerin.");
+  await apiRequest(`${ENDPOINTS.pelerins}/${id}`, { method: "PATCH", body: JSON.stringify({ isActive: false }) }, "Impossible d'archiver le pèlerin.");
+  if (pelerin?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${pelerin.utilisateurId}`, { method: "PATCH", body: JSON.stringify({ isActive: false }) }, "Impossible d'archiver le compte du pèlerin.");
+  }
+}
+
+// Restaure la fiche pèlerin et réactive son compte
+export async function restorePelerin(id) {
+  const pelerin = await apiRequest(`${ENDPOINTS.pelerins}/${id}`, {}, "Impossible de charger le pèlerin.");
+  await apiRequest(`${ENDPOINTS.pelerins}/${id}`, { method: "PATCH", body: JSON.stringify({ isActive: true }) }, "Impossible de restaurer le pèlerin.");
+  if (pelerin?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${pelerin.utilisateurId}`, { method: "PATCH", body: JSON.stringify({ isActive: true }) }, "Impossible de restaurer le compte du pèlerin.");
+  }
+}
+
+// Suppression définitive : vrai DELETE de la fiche et du compte lié
+export async function deletePelerinDefinitif(id) {
+  const pelerin = await apiRequest(`${ENDPOINTS.pelerins}/${id}`, {}, "Impossible de charger le pèlerin.");
+  await apiRequest(`${ENDPOINTS.pelerins}/${id}`, { method: "DELETE" }, "Impossible de supprimer le pèlerin.");
+  if (pelerin?.utilisateurId) {
+    await apiRequest(`${ENDPOINTS.utilisateurs}/${pelerin.utilisateurId}`, { method: "DELETE" }, "Impossible de supprimer le compte du pèlerin.");
+  }
 }
 
 // Affecte (ou retire) un pèlerin à un groupe précis, depuis la fiche du groupe

@@ -25,6 +25,10 @@ export async function login(email, password) {
     throw new Error("Email ou mot de passe incorrect.");
   }
 
+  if (utilisateur.isActive === false) {
+    throw new Error("Ce compte a été archivé. Contactez l'administration.");
+  }
+
   const { motDePasse: _mdp, ...userSafe } = utilisateur;
 
   saveSession(userSafe);
