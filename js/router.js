@@ -14,6 +14,9 @@ import { renderMonPoleUrgencePage } from "./pages/monPoleUrgencePage.js";
 import { renderItinerairePage } from "./pages/itinerairePage.js";
 import { renderGuidesPage } from "./pages/guidesPage.js";
 import { renderAnnoncePage } from "./pages/annoncePage.js";
+import { renderDashboardAdminPage } from "./pages/dashboardAdminPage.js";
+import { renderDashboardGuidePage } from "./pages/dashboardGuidePage.js";
+import { renderDashboardProchePage } from "./pages/dashboardProchePage.js";
 
 const routes = {
   accueil: renderAccueilPage,
@@ -22,6 +25,9 @@ const routes = {
   pelerins: renderPelerinsPage,
   "annuaire-guides": renderGuidesPage,
   annonces: renderAnnoncePage,
+  "dashboard-admin": renderDashboardAdminPage,
+  "dashboard-guide": renderDashboardGuidePage,
+  "dashboard-proche": renderDashboardProchePage,
   "mon-groupe": renderMonGroupePage,
    "dashboard-pelerin": renderDashboardPelerinPage,
   "pole-urgence": renderPoleUrgencePage,
@@ -38,6 +44,9 @@ const ROUTE_PERMISSIONS = {
   pelerins: [ROLES.ADMIN],
   "annuaire-guides": [ROLES.ADMIN],
   annonces: [ROLES.ADMIN, ROLES.GUIDE, ROLES.PELERIN],
+  "dashboard-admin": [ROLES.ADMIN],
+  "dashboard-guide": [ROLES.GUIDE],
+  "dashboard-proche": [ROLES.PROCHE],
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],
   "pole-urgence": [ROLES.ADMIN],
