@@ -17,6 +17,8 @@ import { renderAnnoncePage } from "./pages/annoncePage.js";
 import { renderDashboardAdminPage } from "./pages/dashboardAdminPage.js";
 import { renderDashboardGuidePage } from "./pages/dashboardGuidePage.js";
 import { renderDashboardProchePage } from "./pages/dashboardProchePage.js";
+import { renderProfilPelerinPage } from "./pages/profilPelerinPage.js";
+import { renderMonGroupePelerinPage } from "./pages/monGroupePelerinPage.js";
 
 const routes = {
   accueil: renderAccueilPage,
@@ -28,6 +30,8 @@ const routes = {
   "dashboard-admin": renderDashboardAdminPage,
   "dashboard-guide": renderDashboardGuidePage,
   "dashboard-proche": renderDashboardProchePage,
+  "mon-profil": renderProfilPelerinPage,
+  "mon-groupe-pelerin": renderMonGroupePelerinPage,
   "mon-groupe": renderMonGroupePage,
    "dashboard-pelerin": renderDashboardPelerinPage,
   "pole-urgence": renderPoleUrgencePage,
@@ -47,12 +51,14 @@ const ROUTE_PERMISSIONS = {
   "dashboard-admin": [ROLES.ADMIN],
   "dashboard-guide": [ROLES.GUIDE],
   "dashboard-proche": [ROLES.PROCHE],
+  "mon-profil": [ROLES.PELERIN],
+  "mon-groupe-pelerin": [ROLES.PELERIN],
   "mon-groupe": [ROLES.GUIDE],
   "dashboard-pelerin": [ROLES.PELERIN],
   "pole-urgence": [ROLES.ADMIN],
   "mon-pole-urgence": [ROLES.GUIDE],
     "pole-urgence-pelerin": [ROLES.PELERIN],
-      "itineraire": [ROLES.GUIDE,ROLES.ADMIN],
+      "itineraire": [ROLES.GUIDE, ROLES.ADMIN, ROLES.PELERIN],
 
 
 
