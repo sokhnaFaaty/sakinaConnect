@@ -2,7 +2,6 @@ import { showToast } from "./components/toast.js";
 import { ROLES, HOME_PAGE_BY_ROLE } from "./config/roles.js";
 import { isAuthenticated, getUserRole } from "./utils/auth.js";
 
-import { renderAccueilPage } from "./pages/accueilPage.js";
 import { renderLoginPage } from "./pages/loginPage.js";
 import { renderMonGroupePage } from "./pages/monGroupePage.js";
 import { renderGroupesPage } from "./pages/groupesPage.js";
@@ -24,7 +23,6 @@ import { renderProfilProchePage } from "./pages/profilProchePage.js";
 import { renderArchivesPage } from "./pages/archivesPage.js";
 
 const routes = {
-  accueil: renderAccueilPage,
   login: renderLoginPage,
   groupes: renderGroupesPage,
   pelerins: renderPelerinsPage,
@@ -47,7 +45,7 @@ const routes = {
 
 };
 
-const PUBLIC_PAGES = ["accueil", "login"];
+const PUBLIC_PAGES = ["login"];
 
 const ROUTE_PERMISSIONS = {
   groupes: [ROLES.ADMIN],
@@ -85,18 +83,35 @@ export function setLayoutSync(fn) {
   layoutSync = fn;
 }
 
-const DEFAULT_PAGE = "accueil";
+const DEFAULT_PAGE = "login";
 
+// Lit la page à afficher depuis le hash de l'URL. Ex : "#/groupes" -> "groupes"
 export function getCurrentPageFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const page = params.get("page");
+  const page = window.location.hash.replace(/^#\/?/, "");
   return routes[page] ? page : DEFAULT_PAGE;
 }
 
+// Vrai quand c'est NOUS qui changeons le hash (pour ne pas re-naviguer en double)
+let miseAJourInterne = false;
+
+// Met à jour l'URL (le hash) sans recharger la page. Ex : "#/groupes"
 function updatePageUrl(page) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("page", page);
-  history.pushState(null, "", url);
+  const cible = `#/${page}`;
+  if (window.location.hash !== cible) {
+    miseAJourInterne = true;
+    window.location.hash = cible;
+  }
+}
+
+// Appelé par app.js à chaque changement de hash : retour/avance du navigateur,
+// lien direct, ou saisie manuelle de l'URL.
+export function onHashChange() {
+  if (miseAJourInterne) {
+    // Le hash vient d'être changé par notre propre navigate() : page déjà affichée, on ignore.
+    miseAJourInterne = false;
+    return;
+  }
+  navigate(getCurrentPageFromUrl(), false);
 }
 
 async function afficherPage(activePage) {
@@ -107,10 +122,16 @@ async function afficherPage(activePage) {
   const route = routes[activePage];
 
   app.innerHTML = `
-    <div class="grid min-h-[50vh] place-items-center rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
-      <div>
-        <div class="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
-        <p class="mt-4 text-sm font-bold text-slate-500">Chargement...</p>
+    <div class="grid min-h-[60vh] place-items-center">
+      <div class="flex flex-col items-center gap-4 rounded-[2rem] border border-slate-200 bg-white px-12 py-10 text-center shadow-sm">
+        <div class="relative flex h-16 w-16 items-center justify-center">
+          <div class="absolute inset-0 animate-spin rounded-full border-4 border-slate-200 border-t-[#BC7B3B]"></div>
+          <i class="fa-solid fa-moon text-xl text-[#333D2A]"></i>
+        </div>
+        <div>
+          <p class="font-display text-lg font-black text-[#333D2A]">Sakina <span class="text-[#BC7B3B]">Connect</span></p>
+          <p class="mt-1 text-sm font-semibold text-slate-400">Chargement…</p>
+        </div>
       </div>
     </div>
   `;

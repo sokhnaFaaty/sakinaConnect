@@ -1,8 +1,8 @@
 import { getSession, getUserRole } from "../utils/auth.js";
 import { openDrawer } from "./drawer.js";
-import { showToast } from "./toast.js";
 import { logout } from "../services/authService.js";
 import { getPelerinByUtilisateurId } from "../services/pelerinService.js";
+import { getNotifications, countUnseen, markSeen } from "../services/notificationService.js";
 import { escapeHtml } from "../utils/html.js";
 
 const ROLE_LABELS = {
@@ -31,6 +31,7 @@ export function renderNavbar() {
       <div class="flex items-center gap-2 sm:gap-4">
         <button id="notifBtn" class="relative flex h-10 w-10 items-center justify-center rounded-xl text-white transition hover:bg-white/10" aria-label="Notifications">
           <i class="fa-solid fa-bell"></i>
+          <span id="notifBadge" class="absolute right-1 top-1 hidden min-w-[18px] rounded-full bg-[#B40909] px-1 text-center text-[10px] font-black leading-[18px] text-white"></span>
         </button>
 
         <button id="userMenuBtn" class="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-white/10" aria-label="Mon profil">
@@ -53,9 +54,7 @@ export function bindNavbar() {
   const menuBtn = document.getElementById("userMenuBtn");
   if (menuBtn) menuBtn.addEventListener("click", openProfileDrawer);
 
-  const notifBtn = document.getElementById("notifBtn");
-  // La cloche sera reliée aux notifications (SOS + annonces) lors de la feature annonces.
-  if (notifBtn) notifBtn.addEventListener("click", () => showToast("Notifications bientôt disponibles."));
+  initNotifications();
 }
 
 function infoRow(icon, label, value) {
@@ -119,4 +118,100 @@ async function openProfileDrawer() {
       </div>
     `,
   });
+}
+
+// ---------- Notifications (cloche) ----------
+async function initNotifications() {
+  const user = getSession();
+  const role = getUserRole();
+  const notifBtn = document.getElementById("notifBtn");
+  if (!user || !notifBtn) return;
+
+  let items = [];
+  try { items = await getNotifications(user, role); } catch { items = []; }
+  updateBadge(items, user.id);
+
+  notifBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (document.getElementById("notifPanel")) fermerPanneauNotif();
+    else ouvrirPanneauNotif(items, user);
+  });
+}
+
+function updateBadge(items, uid) {
+  const badge = document.getElementById("notifBadge");
+  if (!badge) return;
+  const n = countUnseen(items, uid);
+  if (n > 0) {
+    badge.textContent = n > 9 ? "9+" : String(n);
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+function formatDateNotif(d) {
+  if (!d) return "";
+  return String(d).slice(0, 16).replace("T", " à ");
+}
+
+function notifRow(item) {
+  const iconWrap = item.type === "sos" ? "bg-rose-100 text-rose-600" : "bg-[#F2F2DE] text-[#333D2A]";
+  return `
+    <button data-notif-page="${escapeHtml(item.page)}" class="flex w-full items-start gap-3 border-b border-slate-50 px-4 py-3 text-left transition hover:bg-slate-50 last:border-0">
+      <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconWrap}"><i class="fa-solid ${item.icon}"></i></span>
+      <span class="min-w-0 flex-1">
+        <span class="flex items-center gap-2">
+          <span class="truncate font-bold text-slate-800">${escapeHtml(item.titre)}</span>
+          ${item.urgent ? `<span class="shrink-0 rounded-full bg-rose-100 px-1.5 text-[9px] font-black text-rose-700">URGENT</span>` : ""}
+        </span>
+        <span class="mt-0.5 block truncate text-xs text-slate-500">${escapeHtml(item.sous || "")}</span>
+        <span class="mt-0.5 block text-[10px] text-slate-400">${escapeHtml(formatDateNotif(item.date))}</span>
+      </span>
+    </button>`;
+}
+
+function ouvrirPanneauNotif(items, user) {
+  fermerPanneauNotif();
+  markSeen(user.id); // ouvrir la cloche = tout marquer comme lu
+  const badge = document.getElementById("notifBadge");
+  if (badge) badge.classList.add("hidden");
+
+  const panel = document.createElement("div");
+  panel.id = "notifPanel";
+  panel.className = "fixed right-3 top-16 z-[90] w-80 max-w-[92vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl";
+  panel.innerHTML = `
+    <div class="flex items-center justify-between bg-[#333D2A] px-4 py-3 text-white">
+      <span class="font-black">Notifications</span>
+      <span class="text-xs text-slate-300">${items.length}</span>
+    </div>
+    <div class="max-h-96 overflow-y-auto">
+      ${items.length ? items.map(notifRow).join("") : `<p class="p-6 text-center text-sm text-slate-400">Aucune notification pour le moment.</p>`}
+    </div>`;
+  document.body.appendChild(panel);
+
+  panel.querySelectorAll("[data-notif-page]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const page = el.dataset.notifPage;
+      fermerPanneauNotif();
+      if (page) window.location.hash = "/" + page;
+    });
+  });
+
+  // Fermer si on clique en dehors du panneau (ajouté au prochain tick pour ignorer le clic courant)
+  setTimeout(() => document.addEventListener("click", clicDehorsNotif), 0);
+}
+
+function clicDehorsNotif(e) {
+  const panel = document.getElementById("notifPanel");
+  const btn = document.getElementById("notifBtn");
+  if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+    fermerPanneauNotif();
+  }
+}
+
+function fermerPanneauNotif() {
+  const panel = document.getElementById("notifPanel");
+  if (panel) panel.remove();
+  document.removeEventListener("click", clicDehorsNotif);
 }
