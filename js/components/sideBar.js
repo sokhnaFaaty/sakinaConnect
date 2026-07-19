@@ -44,10 +44,6 @@ export function renderSidebar() {
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span>Urgence SOS</span>
         </button>
-        <button id="logoutBtn" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FA0404] px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-          <span>Déconnexion</span>
-        </button>
       </div>
     </aside>
 
