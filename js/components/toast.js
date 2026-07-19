@@ -13,9 +13,9 @@ export function showToast(message, type = "success") {
     ? "bg-rose-600 text-white shadow-rose-200"
     : "bg-slate-950 text-white shadow-slate-300";
 
-  toast.className = `pointer-events-auto fixed right-5 top-20 z-50 block max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-2xl ${typeClasses}`;
+  toast.className = `pointer-events-auto fixed right-5 top-20 z-[100] block max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-2xl ${typeClasses}`;
 
   timer = setTimeout(() => {
-    toast.className = "pointer-events-none fixed right-5 top-20 z-50 hidden max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-2xl";
+    toast.className = "pointer-events-none fixed right-5 top-20 z-[100] hidden max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-2xl";
   }, 2800);
 }

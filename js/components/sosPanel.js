@@ -88,7 +88,7 @@ export function renderPelerinSosTrigger(containerId, pelerin, groupe, onTriggere
       onConfirm: async () => {
         try {
           await declencherSos({
-            pelerinId: pelerin.idPelerin,
+            pelerinId: pelerin.id,
             guideId: groupe?.guideId || null,
             commentaire: "",
           });
