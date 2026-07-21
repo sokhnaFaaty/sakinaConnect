@@ -44,7 +44,7 @@ export async function renderPoleUrgencePelerinPage() {
 
   app.innerHTML = `
     <section>
-      <div class="mb-6 flex items-start gap-4 rounded-3xl bg-rose-600 p-6 text-white shadow-sm sm:p-7">
+      <div class="mb-6 flex items-start gap-4 rounded-3xl bg-[#B40909] p-6 text-white shadow-sm sm:p-7">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15"><i class="fa-solid fa-shield-halved"></i></div>
         <div>
           <span class="mb-1 inline-block rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">Pôle Assistance Secours</span>
