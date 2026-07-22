@@ -16,7 +16,11 @@ import {
 import { getPelerins } from "../services/pelerinService.js";
 import { getUtilisateurs } from "../services/utilisateurService.js";
 import { getGuides } from "../services/guideService.js";
-import { getHotels } from "../services/hotelService.js";
+import { getHotels, createHotel } from "../services/hotelService.js";
+
+// Villes des lieux saints (tolère les variantes d'orthographe/accents dans les données)
+const estMecque = (ville) => /mecque|makka|makkah/i.test(ville || "");
+const estMedine = (ville) => /m[ée]dine|madina|madinah/i.test(ville || "");
 
 // ---------- Corps du formulaire groupe ----------
   let currentView = "table";
@@ -28,8 +32,10 @@ function groupeFormBody(groupe, guides, hotels, utilisateurMap) {
     })
     .join("");
 
-  const optionsHotels = (selectedId) =>
+  // Options d'hôtels filtrées par ville (Mecque ou Médine)
+  const optionsHotels = (selectedId, filtreVille) =>
     hotels
+      .filter((h) => filtreVille(h.ville))
       .map((h) => `<option value="${escapeHtml(h.id)}" ${selectedId === h.id ? "selected" : ""}>${escapeHtml(h.nom)}</option>`)
       .join("");
 
@@ -52,18 +58,28 @@ function groupeFormBody(groupe, guides, hotels, utilisateurMap) {
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="grpHotelMecque">Hôtel Mecque *</label>
-        <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="grpHotelMecque">
-          <option value="">Ex: Fairmont Clock Tower</option>
-          ${optionsHotels(groupe?.hotelMecqueId)}
-        </select>
+        <div class="flex items-center gap-2">
+          <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="grpHotelMecque">
+            <option value="" disabled selected hidden>Ex: Fairmont Clock Tower</option>
+            ${optionsHotels(groupe?.hotelMecqueId, estMecque)}
+          </select>
+          <button type="button" id="addHotelMecque" title="Ajouter un hôtel à la Mecque" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#333D2A] text-white transition hover:opacity-90">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
         <p id="grpHotelMecqueError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="grpHotelMedine">Hôtel Médine *</label>
-        <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="grpHotelMedine">
-          <option value="">Ex: Anwar Al Madina Hotel</option>
-          ${optionsHotels(groupe?.hotelMedineId)}
-        </select>
+        <div class="flex items-center gap-2">
+          <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="grpHotelMedine">
+            <option value="" disabled selected hidden>Ex: Anwar Al Madina Hotel</option>
+            ${optionsHotels(groupe?.hotelMedineId, estMedine)}
+          </select>
+          <button type="button" id="addHotelMedine" title="Ajouter un hôtel à Médine" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#333D2A] text-white transition hover:opacity-90">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
         <p id="grpHotelMedineError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
     </div>
@@ -89,6 +105,15 @@ function openGroupeForm(groupe, guides, hotels, utilisateurMap) {
     icon: "fa-people-group",
     body: groupeFormBody(groupe, guides, hotels, utilisateurMap),
     confirmLabel: groupe ? "Mettre à jour" : "Enregistrer",
+    onMount: (overlay) => {
+      // Boutons "+" : créer un hôtel (ville pré-fixée) et le sélectionner dans le select
+      overlay.querySelector("#addHotelMecque")?.addEventListener("click", () =>
+        openHotelForm("La Mecque", "grpHotelMecque")
+      );
+      overlay.querySelector("#addHotelMedine")?.addEventListener("click", () =>
+        openHotelForm("Médine", "grpHotelMedine")
+      );
+    },
     onConfirm: async (modal) => {
       const nom = modal.querySelector("#grpNom").value.trim();
       const guideId = modal.querySelector("#grpGuide").value;
@@ -122,6 +147,81 @@ function openGroupeForm(groupe, guides, hotels, utilisateurMap) {
           showToast("Groupe créé avec succès.");
         }
         await renderGroupesPage();
+        return true;
+      } catch (error) {
+        showToast(error.message, "error");
+        return false;
+      }
+    },
+  });
+}
+
+// ---------- Modale : ajouter un hôtel (ouverte depuis le bouton "+") ----------
+// ville est fixée par le bouton d'origine ; selectId = select à compléter après création.
+function openHotelForm(ville, selectId) {
+  openModal({
+    title: `Ajouter un hôtel à ${ville}`,
+    icon: "fa-hotel",
+    confirmLabel: "Ajouter l'hôtel",
+    confirmIcon: "fa-plus",
+    body: `
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="hotelNom">Nom de l'hôtel *</label>
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="hotelNom" placeholder="Ex: Fairmont Clock Tower" />
+        <p id="hotelNomError" class="mt-1 hidden text-xs text-rose-600"></p>
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="hotelVille">Ville</label>
+        <input class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500" type="text" id="hotelVille" value="${escapeHtml(ville)}" readonly />
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="hotelAdresse">Adresse</label>
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="hotelAdresse" placeholder="Ex: Abraj Al Bait" />
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="hotelTel">Téléphone</label>
+          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="hotelTel" placeholder="+966 ..." />
+        </div>
+        <div>
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="hotelEtoiles">Étoiles</label>
+          <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="hotelEtoiles">
+            <option value="5" selected>5 étoiles</option>
+            <option value="4">4 étoiles</option>
+            <option value="3">3 étoiles</option>
+            <option value="2">2 étoiles</option>
+            <option value="1">1 étoile</option>
+          </select>
+        </div>
+      </div>
+    `,
+    onConfirm: async (overlay) => {
+      const nom = overlay.querySelector("#hotelNom").value.trim();
+      if (!nom) {
+        showError("hotelNom", "hotelNomError", "Le nom de l'hôtel est obligatoire.");
+        return false;
+      }
+      hideError("hotelNom", "hotelNomError");
+
+      try {
+        const nouvel = await createHotel({
+          nom,
+          ville,
+          adresse: overlay.querySelector("#hotelAdresse").value.trim(),
+          telephone: overlay.querySelector("#hotelTel").value.trim(),
+          nombreEtoiles: overlay.querySelector("#hotelEtoiles").value,
+        });
+
+        // Ajoute le nouvel hôtel au select du formulaire de groupe et le sélectionne
+        const select = document.getElementById(selectId);
+        if (select) {
+          const opt = document.createElement("option");
+          opt.value = nouvel.id;
+          opt.textContent = nouvel.nom;
+          opt.selected = true;
+          select.appendChild(opt);
+        }
+        showToast("Hôtel ajouté.");
         return true;
       } catch (error) {
         showToast(error.message, "error");
@@ -195,6 +295,8 @@ function openGroupeDetail(groupe, guides, hotels, pelerins, utilisateurMap) {
     iconClass: "bg-transparent text-slate-700 text-lg",
     body: groupeDetailBody(groupe, guides, hotels, pelerins, utilisateurMap),
     confirmLabel: "Fermer",
+    cancelLabel: null,
+    maxWidth: "max-w-2xl",
     onConfirm: async () => true,
   });
 }
