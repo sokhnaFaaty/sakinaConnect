@@ -195,6 +195,8 @@ function openGroupeDetail(groupe, guides, hotels, pelerins, utilisateurMap) {
     iconClass: "bg-transparent text-slate-700 text-lg",
     body: groupeDetailBody(groupe, guides, hotels, pelerins, utilisateurMap),
     confirmLabel: "Fermer",
+    cancelLabel: null,
+    maxWidth: "max-w-2xl",
     onConfirm: async () => true,
   });
 }
