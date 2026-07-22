@@ -1,5 +1,4 @@
 import { getSession, getUserRole } from "../utils/auth.js";
-import { openDrawer } from "./drawer.js";
 import { logout } from "../services/authService.js";
 import { getPelerinByUtilisateurId } from "../services/pelerinService.js";
 import { getNotifications, countUnseen, markSeen } from "../services/notificationService.js";
@@ -52,7 +51,12 @@ export function renderNavbar() {
 // Branche les interactions de la navbar (à appeler après le montage du layout)
 export function bindNavbar() {
   const menuBtn = document.getElementById("userMenuBtn");
-  if (menuBtn) menuBtn.addEventListener("click", openProfileDrawer);
+  if (menuBtn) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleProfileDropdown();
+    });
+  }
 
   initNotifications();
 }
@@ -68,56 +72,89 @@ function infoRow(icon, label, value) {
     </div>`;
 }
 
-// Drawer "Mon profil" : infos de l'utilisateur + bouton Déconnexion en bas
-async function openProfileDrawer() {
+// Menu déroulant "Mon profil" : ouvert depuis l'avatar en haut à droite.
+// Bascule (ouvre/ferme) à chaque clic sur le bouton du menu.
+function toggleProfileDropdown() {
+  if (document.getElementById("profilePanel")) {
+    fermerProfil();
+  } else {
+    ouvrirProfil();
+  }
+}
+
+// Affiche le menu déroulant du profil ancré sous l'avatar.
+function ouvrirProfil() {
+  fermerPanneauNotif(); // un seul panneau ouvert à la fois
+
   const user = getSession();
   if (!user) return;
   const role = getUserRole();
   const roleLabel = ROLE_LABELS[role] || role || "";
   const initiale = user.nomComplet ? escapeHtml(user.nomComplet.charAt(0).toUpperCase()) : "?";
 
-  // Le passeport n'existe que pour un pèlerin (sur sa fiche, pas sur le compte)
-  let extraRows = "";
+  const panel = document.createElement("div");
+  panel.id = "profilePanel";
+  panel.className = "fixed right-3 top-16 z-[90] w-72 max-w-[92vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl";
+  panel.innerHTML = `
+    <div class="flex flex-col items-center gap-2 bg-[#333D2A] px-4 py-5 text-center text-white">
+      <div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#BC7B3B] text-xl font-black">
+        ${user.photo ? `<img src="${escapeHtml(user.photo)}" alt="" class="h-full w-full object-cover" />` : initiale}
+      </div>
+      <div>
+        <h3 class="text-base font-black">${escapeHtml(user.nomComplet || "-")}</h3>
+        <span class="mt-1 inline-block rounded-full bg-white/15 px-3 py-0.5 text-xs font-bold">${escapeHtml(roleLabel)}</span>
+      </div>
+    </div>
+
+    <div class="grid gap-2 p-4">
+      ${infoRow("fa-envelope", "Email", user.email || "-")}
+      ${infoRow("fa-phone", "Téléphone", user.telephone || "-")}
+      <div id="profilePassportSlot"></div>
+    </div>
+
+    <div class="border-t border-slate-100 p-3">
+      <button id="profileLogoutBtn" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FA0404] px-4 py-2.5 text-sm font-extrabold text-white transition hover:opacity-90">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Déconnexion
+      </button>
+    </div>`;
+  document.body.appendChild(panel);
+
+  panel.querySelector("#profileLogoutBtn").addEventListener("click", () => {
+    fermerProfil();
+    logout();
+  });
+
+  // Le passeport n'existe que pour un pèlerin (sur sa fiche, pas sur le compte).
+  // Chargé à la volée puis injecté, pour ne pas retarder l'ouverture du menu.
   if (role === "PELERIN") {
-    try {
-      const pelerin = await getPelerinByUtilisateurId(user.id);
-      if (pelerin?.numeroPasseport) {
-        extraRows += infoRow("fa-passport", "Passeport", pelerin.numeroPasseport);
-      }
-    } catch {
-      /* on ignore : le profil s'affiche sans le passeport */
-    }
+    getPelerinByUtilisateurId(user.id)
+      .then((pelerin) => {
+        const slot = document.getElementById("profilePassportSlot");
+        if (slot && pelerin?.numeroPasseport) {
+          slot.innerHTML = infoRow("fa-passport", "Passeport", pelerin.numeroPasseport);
+        }
+      })
+      .catch(() => {
+        /* on ignore : le profil s'affiche sans le passeport */
+      });
   }
 
-  openDrawer({
-    title: "Mon profil",
-    icon: "fa-user",
-    cancelLabel: "Fermer",
-    confirmLabel: "Déconnexion",
-    confirmIcon: "fa-arrow-right-from-bracket",
-    confirmClass: "bg-[#FA0404] hover:opacity-90",
-    onConfirm: async () => {
-      logout();
-      return true;
-    },
-    body: `
-      <div class="flex flex-col items-center gap-3 border-b border-slate-100 pb-5 text-center">
-        <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#BC7B3B] text-2xl font-black text-white">
-          ${user.photo ? `<img src="${escapeHtml(user.photo)}" alt="" class="h-full w-full object-cover" />` : initiale}
-        </div>
-        <div>
-          <h3 class="text-lg font-black text-slate-950">${escapeHtml(user.nomComplet || "-")}</h3>
-          <span class="mt-1 inline-block rounded-full bg-[#F2F2DE] px-3 py-0.5 text-xs font-bold text-[#333D2A]">${escapeHtml(roleLabel)}</span>
-        </div>
-      </div>
+  // Fermer si on clique en dehors (au prochain tick pour ignorer le clic courant)
+  setTimeout(() => document.addEventListener("click", clicDehorsProfil), 0);
+}
 
-      <div class="grid gap-2 pt-4">
-        ${infoRow("fa-envelope", "Email", user.email || "-")}
-        ${infoRow("fa-phone", "Téléphone", user.telephone || "-")}
-        ${extraRows}
-      </div>
-    `,
-  });
+function clicDehorsProfil(e) {
+  const panel = document.getElementById("profilePanel");
+  const btn = document.getElementById("userMenuBtn");
+  if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+    fermerProfil();
+  }
+}
+
+function fermerProfil() {
+  const panel = document.getElementById("profilePanel");
+  if (panel) panel.remove();
+  document.removeEventListener("click", clicDehorsProfil);
 }
 
 // ---------- Notifications (cloche) ----------
@@ -173,6 +210,7 @@ function notifRow(item) {
 
 function ouvrirPanneauNotif(items, user) {
   fermerPanneauNotif();
+  fermerProfil(); // un seul panneau ouvert à la fois
   markSeen(user.id); // ouvrir la cloche = tout marquer comme lu
   const badge = document.getElementById("notifBadge");
   if (badge) badge.classList.add("hidden");
