@@ -19,8 +19,16 @@ import { getUtilisateurs } from "../services/utilisateurService.js";
 import { getGroupes } from "../services/groupeService.js";
 import { uploadUserPhoto } from "../services/cloudinaryService.js";
 
+// ---------- Avatar d'un guide (photo ou icône par défaut) ----------
+function guideAvatar(utilisateur, size = "h-10 w-10") {
+  return utilisateur?.photo
+    ? `<img src="${escapeHtml(utilisateur.photo)}" alt="" class="${size} shrink-0 rounded-full object-cover" />`
+    : `<div class="flex ${size} shrink-0 items-center justify-center rounded-full bg-[#F2F2DE] text-[#333D2A]"><i class="fa-solid fa-user-tie"></i></div>`;
+}
+
 // ---------- Corps du formulaire guide ----------
 function guideFormBody(guide, utilisateur) {
+  const photoActuelle = utilisateur?.photo || "";
   return `
     <div>
       <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="guideNom">Nom complet de l'Oustadh *</label>
@@ -28,21 +36,25 @@ function guideFormBody(guide, utilisateur) {
       <p id="guideNomError" class="mt-1 hidden text-xs text-rose-600"></p>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
-      <div>
-        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="guideTel">Téléphone de Contact *</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="guideTel" value="${escapeHtml(utilisateur?.telephone || "")}" placeholder="77 123 45 67" />
-        <p id="guideTelError" class="mt-1 hidden text-xs text-rose-600"></p>
-      </div>
-      <div>
-        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="guideEmail">Email *</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="email" id="guideEmail" value="${escapeHtml(utilisateur?.email || "")}" placeholder="email@gmail.com" />
-        <p id="guideEmailError" class="mt-1 hidden text-xs text-rose-600"></p>
-      </div>
+    <div>
+      <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="guideTel">Téléphone de Contact *</label>
+      <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="guideTel" value="${escapeHtml(utilisateur?.telephone || "")}" placeholder="77 123 45 67" />
+      <p id="guideTelError" class="mt-1 hidden text-xs text-rose-600"></p>
+    </div>
+
+    <div>
+      <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="guideEmail">Email *</label>
+      <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="email" id="guideEmail" value="${escapeHtml(utilisateur?.email || "")}" placeholder="email@gmail.com" />
+      <p id="guideEmailError" class="mt-1 hidden text-xs text-rose-600"></p>
     </div>
 
     <div>
       <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="guidePhoto">Image (facultatif)</label>
+      ${photoActuelle ? `
+      <div class="mb-2 flex items-center gap-3">
+        <img src="${escapeHtml(photoActuelle)}" alt="" class="h-14 w-14 rounded-full object-cover" />
+        <span class="text-xs text-slate-500">Photo actuelle — choisissez un fichier pour la remplacer.</span>
+      </div>` : ""}
       <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm" type="file" id="guidePhoto" accept="image/*" />
       <p id="guidePhotoError" class="mt-1 hidden text-xs text-rose-600"></p>
     </div>
@@ -151,8 +163,8 @@ function openGuideForm(guide, utilisateurMap, onDone) {
 function guideCard(guide, utilisateur, groupesDuGuide) {
   const nom = utilisateur?.nomComplet || "Guide inconnu";
   const badge = guide.disponibilite
-    ? `<span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-700">En Service</span>`
-    : `<span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-500">Indisponible</span>`;
+    ? `<span class="shrink-0 whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-700">En Service</span>`
+    : `<span class="shrink-0 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-500">Indisponible</span>`;
 
   const groupesLabel = groupesDuGuide.length
     ? groupesDuGuide.map((g) => escapeHtml(g.nom)).join(", ")
@@ -161,11 +173,16 @@ function guideCard(guide, utilisateur, groupesDuGuide) {
   return `
     <article class="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="flex-1 p-5">
-        <div class="mb-2 flex items-start justify-between gap-2">
-          <h3 class="font-black text-slate-950">${escapeHtml(nom)}</h3>
+        <div class="mb-3 flex items-start justify-between gap-2">
+          <div class="flex items-center gap-3">
+            ${guideAvatar(utilisateur, "h-12 w-12")}
+            <div>
+              <h3 class="font-black text-slate-950">${escapeHtml(nom)}</h3>
+              <span class="mt-1 inline-block rounded-md bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">${escapeHtml(guide.id.slice(0, 6).toUpperCase())}</span>
+            </div>
+          </div>
           ${badge}
         </div>
-        <span class="inline-block rounded-md bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">${escapeHtml(guide.id.slice(0, 6).toUpperCase())}</span>
 
         <div class="mt-4 grid gap-2 text-sm text-slate-600">
           <p class="flex items-center gap-2"><i class="fa-solid fa-phone w-4 text-[#333D2A]"></i> ${escapeHtml(utilisateur?.telephone || "-")}</p>
@@ -233,12 +250,13 @@ export async function renderGuidesPage() {
         rows: guides,
         emptyMessage: "Aucun guide enregistré pour l'instant.",
         columns: [
+          { label: "Image", render: (guide) => guideAvatar(utilisateurMap[guide.utilisateurId]) },
           { label: "Nom", render: (guide) => `<strong class="font-bold text-slate-950">${escapeHtml(utilisateurMap[guide.utilisateurId]?.nomComplet || "-")}</strong>` },
           { label: "Téléphone", render: (guide) => escapeHtml(utilisateurMap[guide.utilisateurId]?.telephone || "-") },
           { label: "Email", render: (guide) => escapeHtml(utilisateurMap[guide.utilisateurId]?.email || "-") },
           { label: "Disponibilité", render: (guide) => guide.disponibilite
-            ? `<span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-700">En Service</span>`
-            : `<span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-500">Indisponible</span>` },
+            ? `<span class="whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-700">En Service</span>`
+            : `<span class="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-500">Indisponible</span>` },
           { label: "Groupes assignés", render: (guide) => escapeHtml(groupesLabel(guide)) },
           { label: "Actions", render: (guide) => `<div class="flex items-center gap-3 text-base">${actionsHtml(guide)}</div>` },
         ],
