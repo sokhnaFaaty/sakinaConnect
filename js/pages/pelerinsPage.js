@@ -450,6 +450,8 @@ export async function openPelerinDetail(pelerin, utilisateurMap, groupeMap, hote
       </div>
     `,
     confirmLabel: "Fermer le Profil",
+    cancelLabel: null,
+    maxWidth: "max-w-3xl",
     onConfirm: async () => true,
   });
 }

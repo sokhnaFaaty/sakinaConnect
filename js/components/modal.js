@@ -21,6 +21,7 @@ export function openModal({
   cancelLabel = "Annuler",
   onConfirm = null,
   onMount = null,
+  maxWidth = "max-w-md",
 })  {
   closeModal();
 
@@ -32,7 +33,7 @@ export function openModal({
   overlay.setAttribute("aria-modal", "true");
 
   overlay.innerHTML = `
-    <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+    <div class="max-h-[90vh] w-full ${maxWidth} overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
       <div class="mb-5 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="flex h-11 w-11 items-center justify-center rounded-2xl ${iconClass}">
@@ -48,7 +49,7 @@ export function openModal({
       <form data-modal-form class="grid gap-4">
         ${body}
         <div class="mt-2 flex justify-end gap-3">
-          <button type="button" data-modal-cancel class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">${cancelLabel}</button>
+          ${cancelLabel ? `<button type="button" data-modal-cancel class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">${cancelLabel}</button>` : ""}
           <button type="submit" class="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white shadow-lg transition ${confirmClass}">
             <i class="fa-solid ${confirmIcon}"></i>
             <span>${confirmLabel}</span>
@@ -78,7 +79,8 @@ export function openModal({
   });
 
   overlay.querySelector("[data-modal-close]").addEventListener("click", close);
-  overlay.querySelector("[data-modal-cancel]").addEventListener("click", close);
+  const cancelBtn = overlay.querySelector("[data-modal-cancel]");
+  if (cancelBtn) cancelBtn.addEventListener("click", close);
 
   overlay.querySelector("[data-modal-form]").addEventListener("submit", async (event) => {
     event.preventDefault();
