@@ -76,7 +76,7 @@ export async function renderMonGroupePage() {
       </div>
 
 <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <article class="min-w-0 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="mb-4 text-lg font-black text-slate-950">Liste de mon Groupe (${pelerins.length})</h2>
         ${renderTable({
           rows: pelerins,
@@ -91,15 +91,17 @@ export async function renderMonGroupePage() {
                   : `<div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400"><i class="fa-solid fa-user"></i></div>`;
               },
             },
-            { label: "Nom Complet", render: (p) => escapeHtml(utilisateurMap[p.utilisateurId]?.nomComplet || "—") },
+            { label: "Nom Complet", render: (p) => `<strong class="font-bold text-slate-950">${escapeHtml(utilisateurMap[p.utilisateurId]?.nomComplet || "—")}</strong>` },
             { label: "Numéro Visa", render: (p) => escapeHtml(p.numeroPasseport) },
-            { label: "Statut Visa", render: (p) => escapeHtml(p.statutVisa) },
-            { label: "Fiche", render: (p) => `<button data-view-pelerin="${escapeHtml(p.id)}" class="font-semibold text-[#333D2A] hover:underline">Détails</button>` },
+            { label: "Statut Visa", render: (p) => p.statutVisa === "APPROUVE"
+              ? `<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">Approuvé</span>`
+              : `<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">${escapeHtml(p.statutVisa)}</span>` },
+            { label: "Fiche", render: (p) => `<button data-view-pelerin="${escapeHtml(p.id)}" title="Voir la fiche" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-[#333D2A] hover:bg-slate-50"><i class="fa-solid fa-eye"></i></button>` },
           ],
         })}
       </article>
 
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <article class="min-w-0 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="mb-4 flex items-center gap-2 text-lg font-black text-slate-950">
           <i class="fa-regular fa-clock text-[#BC7B3B]"></i> Planning de voyages
         </h2>
