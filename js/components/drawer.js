@@ -80,10 +80,30 @@ export function openDrawer({
   overlay.querySelector("[data-drawer-close]").addEventListener("click", close);
   overlay.querySelector("[data-drawer-cancel]").addEventListener("click", close);
 
-  // Le bouton "Enregistrer" déclenche la soumission du formulaire
-  overlay.querySelector("[data-drawer-submit]").addEventListener("click", async () => {
+  // Le bouton "Enregistrer" déclenche la soumission du formulaire.
+  // Pendant le traitement (validation d'unicité, upload, appels réseau...), on
+  // désactive le bouton et on affiche un état "chargement" pour éviter les
+  // doubles clics et montrer que la vérification est bien en cours.
+  const submitBtn = overlay.querySelector("[data-drawer-submit]");
+  const cancelBtn = overlay.querySelector("[data-drawer-cancel]");
+  submitBtn.addEventListener("click", async () => {
     if (typeof onConfirm === "function") {
-      const result = await onConfirm(overlay);
+      const contenuInitial = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      submitBtn.classList.add("cursor-not-allowed", "opacity-60");
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Traitement…</span>`;
+
+      let result;
+      try {
+        result = await onConfirm(overlay);
+      } finally {
+        submitBtn.disabled = false;
+        cancelBtn.disabled = false;
+        submitBtn.classList.remove("cursor-not-allowed", "opacity-60");
+        submitBtn.innerHTML = contenuInitial;
+      }
+
       if (result === false) return;
     }
     close();
