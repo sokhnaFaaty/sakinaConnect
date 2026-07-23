@@ -4,6 +4,8 @@ import { pagination, bindPagination } from "../components/pagination.js";
 import { escapeHtml } from "../utils/html.js";
 import { getSession } from "../utils/auth.js";
 import { getPelerinByUtilisateurId } from "../services/pelerinService.js";
+import { getProcheByPelerinId } from "../services/procheService.js";
+import { getUtilisateurById } from "../services/utilisateurService.js";
 import { getGroupes } from "../services/groupeService.js";
 import { getPlanningDuGroupe } from "../services/planningService.js";
 import { getCategories } from "../services/categorieService.js";
@@ -41,6 +43,10 @@ export async function renderMonGroupePelerinPage() {
   ]);
   const categorieMap = Object.fromEntries(categories.map((c) => [c.idCategorie, c.libelle]));
 
+  // Le contact d'urgence, c'est le proche : on ne l'affiche que si le pèlerin en a un
+  const procheAssocie = await getProcheByPelerinId(pelerin.id);
+  const procheUser = procheAssocie ? await getUtilisateurById(procheAssocie.utilisateurId) : null;
+
   app.innerHTML = `
     <section>
       ${pageHeader({ kicker: "Mon voyage", title: `Mon groupe : ${escapeHtml(groupe.nom)}`, subtitle: "Vos informations enregistrées et état de préparation." })}
@@ -58,9 +64,11 @@ export async function renderMonGroupePelerinPage() {
               <p class="mb-2 font-bold text-slate-800">${escapeHtml(pelerin.id.slice(0, 6).toUpperCase())}</p>
               <p class="text-slate-500">Numéro de passeport :</p>
               <p class="mb-2 font-bold text-slate-800">${escapeHtml(pelerin.numeroPasseport || "-")}</p>
-              <p class="text-slate-500">Contact d'urgence :</p>
-              <p class="font-bold text-slate-800">${escapeHtml(pelerin.contactUrgenceNom || "-")}</p>
-              <p class="text-slate-600">${escapeHtml(pelerin.contactUrgenceTelephone || "")}</p>
+              ${procheUser ? `
+              <p class="text-slate-500">Contact d'urgence (proche) :</p>
+              <p class="font-bold text-slate-800">${escapeHtml(procheUser.nomComplet || "-")}${procheAssocie.lienParente ? ` (${escapeHtml(procheAssocie.lienParente)})` : ""}</p>
+              <p class="text-slate-600">${escapeHtml(procheUser.telephone || "")}</p>
+              ` : ""}
             </div>
             <div class="grid gap-3">
               ${badgeEtat(!!pelerin.numeroPasseport, "Passeport", "Complet")}
