@@ -23,7 +23,7 @@ import { getGuides } from "../services/guideService.js";
 
 
 // ---------- Corps du formulaire ----------
-function pelerinFormBody(pelerin = null, groupes = []) {
+function pelerinFormBody(pelerin = null, groupes = [], nomPelerin = "") {
   const isEdit = pelerin !== null;
 
   const optionsGroupes = groupes
@@ -31,10 +31,10 @@ function pelerinFormBody(pelerin = null, groupes = []) {
     .join("");
 
   return `
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid gap-4">
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelNomComplet">Nom Complet *</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelNomComplet" value="${escapeHtml(pelerin?.nomComplet || "")}" placeholder="Nom du pèlerin" ${isEdit ? "readonly" : ""} />
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelNomComplet" value="${escapeHtml(nomPelerin || pelerin?.nomComplet || "")}" placeholder="Nom du pèlerin" ${isEdit ? "readonly" : ""} />
         <p id="pelNomCompletError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
 
@@ -77,28 +77,26 @@ function pelerinFormBody(pelerin = null, groupes = []) {
       </div>
 
       ${!isEdit ? `
-      <div class="sm:col-span-2">
+      <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelPhoto">Image</label>
         <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm" type="file" id="pelPhoto" accept="image/*" />
         <p id="pelPhotoError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
       ` : ""}
-    </div>
 
-    <div>
-      <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelInfosMedicales">Problèmes de Santé Chroniques (ex: Asthme, Diabète, Fauteuil roulant)</label>
-      <textarea class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="pelInfosMedicales" rows="2" placeholder="Texte saisi">${escapeHtml(pelerin?.informationsMedicales || "")}</textarea>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-2">
       <div>
-        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelContactNom">Contact urgence - Nom *</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelContactNom" value="${escapeHtml(pelerin?.contactUrgenceNom || "")}" />
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelInfosMedicales">Problèmes de Santé Chroniques (ex: Asthme, Diabète, Fauteuil roulant)</label>
+        <textarea class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="pelInfosMedicales" rows="2" placeholder="Texte saisi">${escapeHtml(pelerin?.informationsMedicales || "")}</textarea>
+      </div>
+
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelContactNom">Contact urgence - Nom ${isEdit ? "*" : ""}</label>
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelContactNom" value="${escapeHtml(pelerin?.contactUrgenceNom || "")}" placeholder="Nom du contact d'urgence" />
         <p id="pelContactNomError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelContactTel">Contact urgence - Téléphone *</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelContactTel" value="${escapeHtml(pelerin?.contactUrgenceTelephone || "")}" />
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelContactTel" value="${escapeHtml(pelerin?.contactUrgenceTelephone || "")}" placeholder="Téléphone du contact d'urgence" />
         <p id="pelContactTelError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
     </div>
@@ -117,7 +115,7 @@ function pelerinFormBody(pelerin = null, groupes = []) {
         </label>
       </div>
 
-      <div id="procheFields" class="mt-4 hidden grid gap-4 sm:grid-cols-2">
+      <div id="procheFields" class="mt-4 hidden grid gap-4">
         <div>
           <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheNomComplet">Nom Complet *</label>
           <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="procheNomComplet" placeholder="Entrez le nom du proche" />
@@ -161,13 +159,13 @@ function attachProcheToggle(modal) {
   });
 }
 // ---------- Formulaire principal ----------
-async function openPelerinForm(pelerin = null) {
+async function openPelerinForm(pelerin = null, nomPelerin = "") {
   const groupes = await getGroupes();
 
   openDrawer({
     title: pelerin ? "Modifier un Pèlerin" : "Ajouter un Pèlerin",
     icon: "fa-user",
-    body: pelerinFormBody(pelerin, groupes),
+    body: pelerinFormBody(pelerin, groupes, nomPelerin),
     confirmLabel: pelerin ? "Enregistrer" : "Sauvegarder le profil",
     onMount: (overlay) => attachProcheToggle(overlay),
     onConfirm: async (modal) => {
@@ -188,9 +186,15 @@ async function openPelerinForm(pelerin = null) {
         [nomComplet, "pelNomComplet", "pelNomCompletError", "Le nom complet"],
         [numeroPasseport, "pelPassport", "pelPassportError", "Le numéro de passeport"],
         [groupeId, "pelGroupe", "pelGroupeError", "Le groupe"],
-        [contactUrgenceNom, "pelContactNom", "pelContactNomError", "Le nom du contact d'urgence"],
         [contactUrgenceTelephone, "pelContactTel", "pelContactTelError", "Le téléphone du contact d'urgence"],
       ];
+
+      // Le nom du contact d'urgence n'est obligatoire qu'en modification
+      if (pelerin) {
+        checks.push([contactUrgenceNom, "pelContactNom", "pelContactNomError", "Le nom du contact d'urgence"]);
+      } else {
+        hideError("pelContactNom", "pelContactNomError");
+      }
 
       checks.forEach(([value, inputId, errorId, label]) => {
         const error = validateField(value, label);
@@ -576,7 +580,7 @@ function bindPelerinRowEvents(pelerins, utilisateurMap, groupeMap, hotels, guide
   document.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
       const pelerin = pelerins.find((p) => p.id === button.dataset.edit);
-      if (pelerin) openPelerinForm(pelerin);
+      if (pelerin) openPelerinForm(pelerin, utilisateurMap[pelerin.utilisateurId]?.nomComplet || "");
     });
   });
 
