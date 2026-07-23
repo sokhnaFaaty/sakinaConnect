@@ -89,16 +89,7 @@ function pelerinFormBody(pelerin = null, groupes = [], nomPelerin = "") {
         <textarea class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="pelInfosMedicales" rows="2" placeholder="Texte saisi">${escapeHtml(pelerin?.informationsMedicales || "")}</textarea>
       </div>
 
-      <div>
-        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelContactNom">Contact urgence - Nom ${isEdit ? "*" : ""}</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelContactNom" value="${escapeHtml(pelerin?.contactUrgenceNom || "")}" placeholder="Nom du contact d'urgence" />
-        <p id="pelContactNomError" class="mt-1 hidden text-xs text-rose-600"></p>
-      </div>
-      <div>
-        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="pelContactTel">Contact urgence - Téléphone *</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="pelContactTel" value="${escapeHtml(pelerin?.contactUrgenceTelephone || "")}" placeholder="Téléphone du contact d'urgence" />
-        <p id="pelContactTelError" class="mt-1 hidden text-xs text-rose-600"></p>
-      </div>
+
     </div>
 
     ${!isEdit ? `
@@ -174,8 +165,8 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
       const statutVisa = modal.querySelector("#pelStatutVisa").value;
       const groupeId = modal.querySelector("#pelGroupe").value;
       const informationsMedicales = modal.querySelector("#pelInfosMedicales").value.trim();
-      const contactUrgenceNom = modal.querySelector("#pelContactNom").value.trim();
-      const contactUrgenceTelephone = modal.querySelector("#pelContactTel").value.trim();
+      // const contactUrgenceNom = modal.querySelector("#pelContactNom").value.trim();
+      // const contactUrgenceTelephone = modal.querySelector("#pelContactTel").value.trim();
       // Champs email/téléphone du compte pèlerin : présents en création uniquement
       const email = modal.querySelector("#pelEmail")?.value.trim() || "";
       const telephone = modal.querySelector("#pelTelephone")?.value.trim() || "";
@@ -186,7 +177,7 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
         [nomComplet, "pelNomComplet", "pelNomCompletError", "Le nom complet"],
         [numeroPasseport, "pelPassport", "pelPassportError", "Le numéro de passeport"],
         [groupeId, "pelGroupe", "pelGroupeError", "Le groupe"],
-        [contactUrgenceTelephone, "pelContactTel", "pelContactTelError", "Le téléphone du contact d'urgence"],
+        [ "pelContactTel", "pelContactTelError", "Le téléphone du contact d'urgence"],
       ];
 
       // Le nom du contact d'urgence n'est obligatoire qu'en modification
@@ -316,8 +307,8 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
             statutVisa,
             groupeId,
             informationsMedicales,
-            contactUrgenceNom,
-            contactUrgenceTelephone,
+            // contactUrgenceNom,
+            // contactUrgenceTelephone,
           });
           showToast("Pèlerin modifié avec succès.");
         } else {
@@ -329,8 +320,8 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
             statutVisa,
             groupeId,
             informationsMedicales,
-            contactUrgenceNom,
-            contactUrgenceTelephone,
+            // contactUrgenceNom,
+            // contactUrgenceTelephone,
             photo: photoUrl,
           });
 
@@ -438,8 +429,8 @@ export async function openPelerinDetail(pelerin, utilisateurMap, groupeMap, hote
           </p>
           <div class="rounded-2xl bg-[#F2F2DE] p-4 text-sm">
             <p class="text-slate-500">Contact d'urgence principal :</p>
-            <p class="font-bold text-slate-800">${escapeHtml(pelerin.contactUrgenceNom)}</p>
-            <p class="mb-3 text-slate-600">${escapeHtml(pelerin.contactUrgenceTelephone)}</p>
+            // <p class="font-bold text-slate-800">${escapeHtml(pelerin.contactUrgenceNom)}</p>
+            // <p class="mb-3 text-slate-600">${escapeHtml(pelerin.contactUrgenceTelephone)}</p>
             <p class="text-slate-500">Proche associé (Portail Famille) :</p>
             <p class="font-bold text-slate-800">${procheUtilisateur ? escapeHtml(procheUtilisateur.nomComplet) + " (" + escapeHtml(procheAssocie.lienParente) + ")" : "Aucun proche associé."}</p>
           </div>

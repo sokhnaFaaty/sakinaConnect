@@ -13,8 +13,8 @@ function normalizePelerin(data) {
     statutVisa: data.statutVisa,
     certificatVaccin: Boolean(data.certificatVaccin),
     informationsMedicales: data.informationsMedicales || "",
-    contactUrgenceNom: data.contactUrgenceNom ? String(data.contactUrgenceNom).trim() : "",
-    contactUrgenceTelephone: String(data.contactUrgenceTelephone).trim(),
+    // contactUrgenceNom: data.contactUrgenceNom ? String(data.contactUrgenceNom).trim() : "",
+    // contactUrgenceTelephone: String(data.contactUrgenceTelephone).trim(),
     groupeId: data.groupeId || null,
     isActive: data.isActive !== false,
   };
@@ -51,7 +51,7 @@ export async function createPelerin(data) {
   required(data.numeroPasseport, "Le numéro de passeport est obligatoire.");
   required(data.statutVisa, "Le statut du visa est obligatoire.");
   required(data.groupeId, "Le groupe est obligatoire.");
-  required(data.contactUrgenceTelephone, "Le téléphone du contact d'urgence est obligatoire.");
+  // required(data.contactUrgenceTelephone, "Le téléphone du contact d'urgence est obligatoire.");
 
   // 1. Générer un mot de passe temporaire pour le compte du pèlerin
   const motDePasseGenere = generateTempPassword();
@@ -97,7 +97,7 @@ export async function updatePelerin(id, data) {
   required(data.numeroPasseport, "Le numéro de passeport est obligatoire.");
   required(data.statutVisa, "Le statut du visa est obligatoire.");
   required(data.contactUrgenceNom, "Le nom du contact d'urgence est obligatoire.");
-  required(data.contactUrgenceTelephone, "Le téléphone du contact d'urgence est obligatoire.");
+  // required(data.contactUrgenceTelephone, "Le téléphone du contact d'urgence est obligatoire.");
 
   return apiRequest(
     `${ENDPOINTS.pelerins}/${id}`,
@@ -107,8 +107,8 @@ export async function updatePelerin(id, data) {
         numeroPasseport: String(data.numeroPasseport).trim(),
         statutVisa: data.statutVisa,
         informationsMedicales: data.informationsMedicales || "",
-        contactUrgenceNom: String(data.contactUrgenceNom).trim(),
-        contactUrgenceTelephone: String(data.contactUrgenceTelephone).trim(),
+        // contactUrgenceNom: String(data.contactUrgenceNom).trim(),
+        // contactUrgenceTelephone: String(data.contactUrgenceTelephone).trim(),
         groupeId: data.groupeId || null,
       }),
     },
