@@ -7,6 +7,7 @@ import { getSession, saveSession } from "../utils/auth.js";
 import { validateEmailFormat, validateTelephone } from "../utils/validators.js";
 import { emailExiste, telephoneExiste } from "../services/validationService.js";
 import { getPelerinByUtilisateurId, updatePelerin } from "../services/pelerinService.js";
+import { getProcheByPelerinId } from "../services/procheService.js";
 import { updateUtilisateur } from "../services/utilisateurService.js";
 import { getGroupes } from "../services/groupeService.js";
 import { getGuides } from "../services/guideService.js";
@@ -44,10 +45,13 @@ export async function renderProfilPelerinPage() {
     return;
   }
 
-  const [groupes, guides, hotels, utilisateurs] = await Promise.all([
-    getGroupes(), getGuides(), getHotels(), getUtilisateurs(),
+  const [groupes, guides, hotels, utilisateurs, procheAssocie] = await Promise.all([
+    getGroupes(), getGuides(), getHotels(), getUtilisateurs(), getProcheByPelerinId(pelerin.id),
   ]);
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
+
+  // Le contact d'urgence, c'est le proche : affiché en lecture seule, uniquement s'il existe
+  const procheUser = procheAssocie ? utilisateurMap[procheAssocie.utilisateurId] : null;
   const groupe = groupes.find((g) => g.id === pelerin.groupeId);
   const guide = groupe ? guides.find((g) => g.id === groupe.guideId) : null;
   const guideU = guide ? utilisateurMap[guide.utilisateurId] : null;
@@ -82,13 +86,21 @@ export async function renderProfilPelerinPage() {
             ${champ("profEmail", "Adresse email", user.email || "", "email", "email@exemple.com")}
           </div>
 
+          ${procheUser ? `
           <div class="mt-5 rounded-2xl bg-rose-50 p-4">
-            <p class="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-rose-600"><i class="fa-solid fa-hand-holding-heart"></i> Contact de secours / proche de confiance</p>
-            <div class="grid gap-4 sm:grid-cols-2">
-              ${champ("profContactNom", "Nom complet", pelerin.contactUrgenceNom || "")}
-              ${champ("profContactTel", "Téléphone de secours", pelerin.contactUrgenceTelephone || "", "text", "77 123 45 67")}
+            <p class="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-rose-600"><i class="fa-solid fa-hand-holding-heart"></i> Contact d'urgence — votre proche</p>
+            <div class="grid gap-4 sm:grid-cols-2 text-sm">
+              <div>
+                <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Nom complet</p>
+                <p class="mt-0.5 font-bold text-slate-800">${escapeHtml(procheUser.nomComplet || "-")}${procheAssocie.lienParente ? ` (${escapeHtml(procheAssocie.lienParente)})` : ""}</p>
+              </div>
+              <div>
+                <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Téléphone</p>
+                <p class="mt-0.5 font-bold text-slate-800">${escapeHtml(procheUser.telephone || "-")}</p>
+              </div>
             </div>
           </div>
+          ` : ""}
 
           <div class="mt-5">
             <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="profMedical">Informations médicales de sécurité</label>
@@ -170,8 +182,6 @@ async function sauvegarder(user, pelerin) {
   const telephone = q("profTel").value.trim();
   const email = q("profEmail").value.trim();
   const photo = q("profPhoto").value.trim();
-  const contactUrgenceNom = q("profContactNom").value.trim();
-  const contactUrgenceTelephone = q("profContactTel").value.trim();
   const informationsMedicales = q("profMedical").value.trim();
   const motDePasse = q("profMotDePasse").value;
   const motDePasseConfirm = q("profMotDePasseConfirm").value;
@@ -181,9 +191,6 @@ async function sauvegarder(user, pelerin) {
   if (emailError) { showError("profEmail", "profEmailError", emailError); hasError = true; } else hideError("profEmail", "profEmailError");
   const telError = validateTelephone(telephone);
   if (telError) { showError("profTel", "profTelError", telError); hasError = true; } else hideError("profTel", "profTelError");
-  const contactTelError = validateTelephone(contactUrgenceTelephone);
-  if (contactTelError) { showError("profContactTel", "profContactTelError", contactTelError); hasError = true; } else hideError("profContactTel", "profContactTelError");
-  if (!contactUrgenceNom) { showError("profContactNom", "profContactNomError", "Le nom du contact de secours est obligatoire."); hasError = true; } else hideError("profContactNom", "profContactNomError");
 
   // Mot de passe : uniquement si l'utilisateur en saisit un nouveau, il doit être confirmé
   if (motDePasse || motDePasseConfirm) {
@@ -209,8 +216,6 @@ async function sauvegarder(user, pelerin) {
       statutVisa: pelerin.statutVisa,
       groupeId: pelerin.groupeId,
       informationsMedicales,
-      contactUrgenceNom,
-      contactUrgenceTelephone,
     });
 
     // Rafraîchit la session pour que la navbar reflète les changements

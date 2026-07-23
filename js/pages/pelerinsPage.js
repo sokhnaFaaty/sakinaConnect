@@ -14,8 +14,8 @@ import {
   updatePelerin,
   deletePelerin,
 } from "../services/pelerinService.js";
-import { getUtilisateurs } from "../services/utilisateurService.js";
-import { createProche,getProches } from "../services/procheService.js";
+import { getUtilisateurs, getUtilisateurById } from "../services/utilisateurService.js";
+import { createProche, getProches, getProcheByPelerinId, updateProche } from "../services/procheService.js";
 import { getGroupes } from "../services/groupeService.js";
 import { uploadUserPhoto } from "../services/cloudinaryService.js";
 import { getHotels } from "../services/hotelService.js";
@@ -23,12 +23,71 @@ import { getGuides } from "../services/guideService.js";
 
 
 // ---------- Corps du formulaire ----------
-function pelerinFormBody(pelerin = null, groupes = [], nomPelerin = "") {
+function pelerinFormBody(pelerin = null, groupes = [], nomPelerin = "", procheExistant = null, procheUtilisateur = null) {
   const isEdit = pelerin !== null;
 
   const optionsGroupes = groupes
     .map((g) => `<option value="${escapeHtml(g.id)}" ${pelerin?.groupeId === g.id ? "selected" : ""}>${escapeHtml(g.nom)}</option>`)
     .join("");
+
+  // Valeurs pré-remplies du proche (en édition, si le pèlerin en a un)
+  const pNom = escapeHtml(procheUtilisateur?.nomComplet || "");
+  const pTel = escapeHtml(procheUtilisateur?.telephone || "");
+  const pEmail = escapeHtml(procheUtilisateur?.email || "");
+  const pLien = escapeHtml(procheExistant?.lienParente || "");
+
+  // Les champs du proche (partagés entre création et édition)
+  const procheFieldsInner = `
+        <div>
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheNomComplet">Nom Complet *</label>
+          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="procheNomComplet" value="${pNom}" placeholder="Entrez le nom du proche" />
+          <p id="procheNomCompletError" class="mt-1 hidden text-xs text-rose-600"></p>
+        </div>
+        <div>
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheTelephone">Téléphone *</label>
+          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="procheTelephone" value="${pTel}" placeholder="Entrez le téléphone" />
+          <p id="procheTelephoneError" class="mt-1 hidden text-xs text-rose-600"></p>
+        </div>
+        <div>
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheEmail">Email (facultatif)</label>
+          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="email" id="procheEmail" value="${pEmail}" placeholder="Entrez l'email du proche" />
+          <p id="procheEmailError" class="mt-1 hidden text-xs text-rose-600"></p>
+        </div>
+        <div>
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheLien">Lien de Parenté *</label>
+          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="procheLien" value="${pLien}" placeholder="Entrez le lien de parenté" />
+          <p id="procheLienError" class="mt-1 hidden text-xs text-rose-600"></p>
+        </div>`;
+
+  // Section proche :
+  // - édition avec proche existant → champs visibles et modifiables (pas de radio)
+  // - création ou édition sans proche → radio OUI/NON pour en ajouter un
+  const procheSection = (isEdit && procheExistant)
+    ? `
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <p class="mb-3 text-sm font-extrabold text-slate-800">Contact d'urgence (proche)</p>
+      <div id="procheFields" class="grid gap-4">
+        ${procheFieldsInner}
+      </div>
+    </div>`
+    : `
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <p class="mb-3 text-sm font-extrabold text-slate-800">Ajouter un Proche ?</p>
+      <div class="flex gap-4">
+        <label class="flex items-center gap-2 text-sm">
+          <input type="radio" name="ajouterProche" id="procheOui" value="oui" />
+          OUI
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input type="radio" name="ajouterProche" id="procheNon" value="non" checked />
+          NON
+        </label>
+      </div>
+
+      <div id="procheFields" class="mt-4 hidden grid gap-4">
+        ${procheFieldsInner}
+      </div>
+    </div>`;
 
   return `
     <div class="grid gap-4">
@@ -92,44 +151,7 @@ function pelerinFormBody(pelerin = null, groupes = [], nomPelerin = "") {
 
     </div>
 
-    ${!isEdit ? `
-    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p class="mb-3 text-sm font-extrabold text-slate-800">Ajouter un Proche ?</p>
-      <div class="flex gap-4">
-        <label class="flex items-center gap-2 text-sm">
-          <input type="radio" name="ajouterProche" id="procheOui" value="oui" />
-          OUI
-        </label>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="radio" name="ajouterProche" id="procheNon" value="non" checked />
-          NON
-        </label>
-      </div>
-
-      <div id="procheFields" class="mt-4 hidden grid gap-4">
-        <div>
-          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheNomComplet">Nom Complet *</label>
-          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="procheNomComplet" placeholder="Entrez le nom du proche" />
-          <p id="procheNomCompletError" class="mt-1 hidden text-xs text-rose-600"></p>
-        </div>
-        <div>
-          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheTelephone">Téléphone *</label>
-          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="procheTelephone" placeholder="Entrez le téléphone" />
-          <p id="procheTelephoneError" class="mt-1 hidden text-xs text-rose-600"></p>
-        </div>
-        <div>
-          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheEmail">Email (facultatif)</label>
-          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="email" id="procheEmail" placeholder="Entrez l'email du proche" />
-          <p id="procheEmailError" class="mt-1 hidden text-xs text-rose-600"></p>
-        </div>
-        <div>
-          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="procheLien">Lien de Parenté *</label>
-          <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="procheLien" placeholder="Entrez le lien de parenté" />
-          <p id="procheLienError" class="mt-1 hidden text-xs text-rose-600"></p>
-        </div>
-      </div>
-    </div>
-    ` : ""}
+    ${procheSection}
   `;
 }
 
@@ -153,10 +175,20 @@ function attachProcheToggle(modal) {
 async function openPelerinForm(pelerin = null, nomPelerin = "") {
   const groupes = await getGroupes();
 
+  // En édition : on récupère le proche existant (= contact d'urgence) pour pré-remplir
+  let procheExistant = null;
+  let procheUtilisateur = null;
+  if (pelerin) {
+    procheExistant = await getProcheByPelerinId(pelerin.id);
+    if (procheExistant) {
+      procheUtilisateur = await getUtilisateurById(procheExistant.utilisateurId);
+    }
+  }
+
   openDrawer({
     title: pelerin ? "Modifier un Pèlerin" : "Ajouter un Pèlerin",
     icon: "fa-user",
-    body: pelerinFormBody(pelerin, groupes, nomPelerin),
+    body: pelerinFormBody(pelerin, groupes, nomPelerin, procheExistant, procheUtilisateur),
     confirmLabel: pelerin ? "Enregistrer" : "Sauvegarder le profil",
     onMount: (overlay) => attachProcheToggle(overlay),
     onConfirm: async (modal) => {
@@ -165,8 +197,6 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
       const statutVisa = modal.querySelector("#pelStatutVisa").value;
       const groupeId = modal.querySelector("#pelGroupe").value;
       const informationsMedicales = modal.querySelector("#pelInfosMedicales").value.trim();
-      // const contactUrgenceNom = modal.querySelector("#pelContactNom").value.trim();
-      // const contactUrgenceTelephone = modal.querySelector("#pelContactTel").value.trim();
       // Champs email/téléphone du compte pèlerin : présents en création uniquement
       const email = modal.querySelector("#pelEmail")?.value.trim() || "";
       const telephone = modal.querySelector("#pelTelephone")?.value.trim() || "";
@@ -177,15 +207,7 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
         [nomComplet, "pelNomComplet", "pelNomCompletError", "Le nom complet"],
         [numeroPasseport, "pelPassport", "pelPassportError", "Le numéro de passeport"],
         [groupeId, "pelGroupe", "pelGroupeError", "Le groupe"],
-        [ "pelContactTel", "pelContactTelError", "Le téléphone du contact d'urgence"],
       ];
-
-      // Le nom du contact d'urgence n'est obligatoire qu'en modification
-      if (pelerin) {
-        checks.push([contactUrgenceNom, "pelContactNom", "pelContactNomError", "Le nom du contact d'urgence"]);
-      } else {
-        hideError("pelContactNom", "pelContactNomError");
-      }
 
       checks.forEach(([value, inputId, errorId, label]) => {
         const error = validateField(value, label);
@@ -207,10 +229,11 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
         else hideError("pelTelephone", "pelTelephoneError");
       }
 
-      const procheOui = modal.querySelector("#procheOui")?.checked;
+      // Le proche est traité : s'il existe déjà (édition) → toujours ; sinon si "OUI" est coché
+      const procheActif = procheExistant ? true : !!modal.querySelector("#procheOui")?.checked;
       let procheData = null;
 
-      if (procheOui) {
+      if (procheActif) {
         const procheNomComplet = modal.querySelector("#procheNomComplet").value.trim();
         const procheTelephone = modal.querySelector("#procheTelephone").value.trim();
         const procheEmail = modal.querySelector("#procheEmail").value.trim();
@@ -274,15 +297,18 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
           showError("pelTelephone", "pelTelephoneError", "Ce téléphone est déjà utilisé.");
           return false;
         }
-        if (procheData) {
-          if (procheData.email && await emailExiste(procheData.email)) {
-            showError("procheEmail", "procheEmailError", "Cet email est déjà utilisé.");
-            return false;
-          }
-          if (await telephoneExiste(procheData.telephone)) {
-            showError("procheTelephone", "procheTelephoneError", "Ce téléphone est déjà utilisé.");
-            return false;
-          }
+      }
+
+      // Unicité du proche (exclut son propre compte quand on met à jour un proche existant)
+      if (procheData) {
+        const procheExcludeId = procheUtilisateur?.id;
+        if (procheData.email && await emailExiste(procheData.email, procheExcludeId)) {
+          showError("procheEmail", "procheEmailError", "Cet email est déjà utilisé.");
+          return false;
+        }
+        if (await telephoneExiste(procheData.telephone, procheExcludeId)) {
+          showError("procheTelephone", "procheTelephoneError", "Ce téléphone est déjà utilisé.");
+          return false;
         }
       }
 
@@ -300,6 +326,19 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
         }
       }
 
+      // Crée le compte proche et affiche le mot de passe temporaire généré
+      const creerProcheAvecMotDePasse = async (pelerinId) => {
+        const { motDePasseGenere } = await createProche({ ...procheData, pelerinId });
+        setTimeout(() => {
+          openInfoCopy({
+            title: "Compte proche créé",
+            message: `Le compte de <strong>${escapeHtml(procheData.nomComplet)}</strong> a été créé. Communique-lui ce mot de passe temporaire :`,
+            value: motDePasseGenere,
+            onCopy: () => showToast("Mot de passe copié."),
+          });
+        }, 200);
+      };
+
       try {
         if (pelerin) {
           await updatePelerin(pelerin.id, {
@@ -307,9 +346,18 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
             statutVisa,
             groupeId,
             informationsMedicales,
-            // contactUrgenceNom,
-            // contactUrgenceTelephone,
           });
+
+          if (procheData) {
+            if (procheExistant) {
+              // Le pèlerin avait déjà un proche → on le met à jour
+              await updateProche(procheExistant.id, procheExistant.utilisateurId, procheData);
+            } else {
+              // Aucun proche jusque-là → on en crée un
+              await creerProcheAvecMotDePasse(pelerin.id);
+            }
+          }
+
           showToast("Pèlerin modifié avec succès.");
         } else {
           const nouveauPelerin = await createPelerin({
@@ -320,27 +368,13 @@ async function openPelerinForm(pelerin = null, nomPelerin = "") {
             statutVisa,
             groupeId,
             informationsMedicales,
-            // contactUrgenceNom,
-            // contactUrgenceTelephone,
             photo: photoUrl,
           });
 
           showToast("Pèlerin créé avec succès.");
 
           if (procheData) {
-            const { motDePasseGenere } = await createProche({
-              ...procheData,
-              pelerinId: nouveauPelerin.id,
-            });
-
-            setTimeout(() => {
-              openInfoCopy({
-                title: "Compte proche créé",
-                message: `Le compte de <strong>${escapeHtml(procheData.nomComplet)}</strong> a été créé. Communique-lui ce mot de passe temporaire :`,
-                value: motDePasseGenere,
-                onCopy: () => showToast("Mot de passe copié."),
-              });
-            }, 200);
+            await creerProcheAvecMotDePasse(nouveauPelerin.id);
           }
         }
 
@@ -428,11 +462,11 @@ export async function openPelerinDetail(pelerin, utilisateurMap, groupeMap, hote
             <i class="fa-solid fa-hand-holding-heart"></i> Proches &amp; contacts d'urgence
           </p>
           <div class="rounded-2xl bg-[#F2F2DE] p-4 text-sm">
-            <p class="text-slate-500">Contact d'urgence principal :</p>
-            // <p class="font-bold text-slate-800">${escapeHtml(pelerin.contactUrgenceNom)}</p>
-            // <p class="mb-3 text-slate-600">${escapeHtml(pelerin.contactUrgenceTelephone)}</p>
-            <p class="text-slate-500">Proche associé (Portail Famille) :</p>
-            <p class="font-bold text-slate-800">${procheUtilisateur ? escapeHtml(procheUtilisateur.nomComplet) + " (" + escapeHtml(procheAssocie.lienParente) + ")" : "Aucun proche associé."}</p>
+            <p class="text-slate-500">Contact d'urgence — Proche associé (Portail Famille) :</p>
+            ${procheUtilisateur ? `
+            <p class="font-bold text-slate-800">${escapeHtml(procheUtilisateur.nomComplet)}${procheAssocie.lienParente ? ` (${escapeHtml(procheAssocie.lienParente)})` : ""}</p>
+            <p class="text-slate-600">${escapeHtml(procheUtilisateur.telephone || "")}</p>
+            ` : `<p class="font-bold text-slate-800">Aucun proche associé.</p>`}
           </div>
 
           <p class="mb-2 mt-4 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-rose-600">

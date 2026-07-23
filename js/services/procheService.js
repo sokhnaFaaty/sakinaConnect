@@ -35,6 +35,16 @@ export async function getProcheByUtilisateurId(utilisateurId) {
   return proches[0] || null;
 }
 
+// Retrouve l'unique proche d'un pèlerin (un pèlerin n'a qu'un seul proche)
+export async function getProcheByPelerinId(pelerinId) {
+  const proches = await apiRequest(
+    `${ENDPOINTS.proches}?pelerinId=${pelerinId}`,
+    {},
+    "Impossible de charger le proche du pèlerin."
+  );
+  return proches.find((p) => p.isActive !== false) || null;
+}
+
 /**
  * Crée le compte utilisateur (rôle PROCHE) ET sa fiche proche, liée à un pèlerin
  * @param {Object} data - { nomComplet, telephone, email (facultatif), lienParente, pelerinId }
@@ -85,6 +95,41 @@ export async function createProche(data) {
 
   // On renvoie le mot de passe généré pour que l'admin puisse le donner au proche
   return { proche: procheCree, motDePasseGenere };
+}
+
+/**
+ * Met à jour un proche existant : son compte utilisateur (nom, email, téléphone)
+ * et son lien de parenté.
+ * @param {string} procheId
+ * @param {string} utilisateurId - le compte utilisateur du proche
+ * @param {Object} data - { nomComplet, telephone, email (facultatif), lienParente }
+ */
+export async function updateProche(procheId, utilisateurId, data) {
+  required(data.nomComplet, "Le nom complet du proche est obligatoire.");
+  required(data.telephone, "Le téléphone du proche est obligatoire.");
+  required(data.lienParente, "Le lien de parenté est obligatoire.");
+
+  await apiRequest(
+    `${ENDPOINTS.utilisateurs}/${utilisateurId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        nomComplet: String(data.nomComplet).trim(),
+        email: data.email ? String(data.email).trim() : "",
+        telephone: String(data.telephone).trim(),
+      }),
+    },
+    "Impossible de mettre à jour le compte du proche."
+  );
+
+  return apiRequest(
+    `${ENDPOINTS.proches}/${procheId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ lienParente: String(data.lienParente).trim() }),
+    },
+    "Impossible de mettre à jour le proche."
+  );
 }
 
 // Soft delete : archive la fiche proche ET son compte utilisateur lié

@@ -13,8 +13,8 @@ function normalizePelerin(data) {
     statutVisa: data.statutVisa,
     certificatVaccin: Boolean(data.certificatVaccin),
     informationsMedicales: data.informationsMedicales || "",
-    // contactUrgenceNom: data.contactUrgenceNom ? String(data.contactUrgenceNom).trim() : "",
-    // contactUrgenceTelephone: String(data.contactUrgenceTelephone).trim(),
+    contactUrgenceNom: data.contactUrgenceNom ? String(data.contactUrgenceNom).trim() : "",
+    contactUrgenceTelephone: data.contactUrgenceTelephone ? String(data.contactUrgenceTelephone).trim() : "",
     groupeId: data.groupeId || null,
     isActive: data.isActive !== false,
   };
@@ -43,7 +43,7 @@ export async function getPelerinsDuGroupe(groupeId) {
 
 /**
  * Crée le compte utilisateur (rôle PELERIN) ET la fiche pèlerin en même temps
- * @param {Object} data - { nomComplet, numeroPasseport, statutVisa, groupeId, informationsMedicales, contactUrgenceNom, contactUrgenceTelephone }
+ * @param {Object} data - { nomComplet, numeroPasseport, statutVisa, groupeId, informationsMedicales }
  * @returns {Object} - le pèlerin créé (avec id, utilisateurId, etc.)
  */
 export async function createPelerin(data) {
@@ -51,7 +51,6 @@ export async function createPelerin(data) {
   required(data.numeroPasseport, "Le numéro de passeport est obligatoire.");
   required(data.statutVisa, "Le statut du visa est obligatoire.");
   required(data.groupeId, "Le groupe est obligatoire.");
-  // required(data.contactUrgenceTelephone, "Le téléphone du contact d'urgence est obligatoire.");
 
   // 1. Générer un mot de passe temporaire pour le compte du pèlerin
   const motDePasseGenere = generateTempPassword();
@@ -96,21 +95,27 @@ export async function createPelerin(data) {
 export async function updatePelerin(id, data) {
   required(data.numeroPasseport, "Le numéro de passeport est obligatoire.");
   required(data.statutVisa, "Le statut du visa est obligatoire.");
-  required(data.contactUrgenceNom, "Le nom du contact d'urgence est obligatoire.");
-  // required(data.contactUrgenceTelephone, "Le téléphone du contact d'urgence est obligatoire.");
+
+  const payload = {
+    numeroPasseport: String(data.numeroPasseport).trim(),
+    statutVisa: data.statutVisa,
+    informationsMedicales: data.informationsMedicales || "",
+    groupeId: data.groupeId || null,
+  };
+
+  // Le contact d'urgence n'est mis à jour que s'il est fourni (page profil du pèlerin)
+  if (data.contactUrgenceNom !== undefined) {
+    payload.contactUrgenceNom = String(data.contactUrgenceNom).trim();
+  }
+  if (data.contactUrgenceTelephone !== undefined) {
+    payload.contactUrgenceTelephone = String(data.contactUrgenceTelephone).trim();
+  }
 
   return apiRequest(
     `${ENDPOINTS.pelerins}/${id}`,
     {
       method: "PATCH",
-      body: JSON.stringify({
-        numeroPasseport: String(data.numeroPasseport).trim(),
-        statutVisa: data.statutVisa,
-        informationsMedicales: data.informationsMedicales || "",
-        // contactUrgenceNom: String(data.contactUrgenceNom).trim(),
-        // contactUrgenceTelephone: String(data.contactUrgenceTelephone).trim(),
-        groupeId: data.groupeId || null,
-      }),
+      body: JSON.stringify(payload),
     },
     "Impossible de modifier le pèlerin."
   );
