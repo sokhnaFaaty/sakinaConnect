@@ -2,7 +2,7 @@
 // Agrège les notifications d'un utilisateur (SOS + annonces) selon son rôle.
 // Aucune nouvelle collection en base : tout est calculé depuis `sos` et `annonces`.
 import { getSos } from "./sosService.js";
-import { getAnnonces } from "./annonceService.js";
+import { getAnnoncesVisibles } from "./annonceService.js";
 import { getPelerins, getPelerinsDuGroupe } from "./pelerinService.js";
 import { getUtilisateurs } from "./utilisateurService.js";
 import { getGuideByUtilisateurId, getGroupeDuGuide } from "./guideService.js";
@@ -22,9 +22,10 @@ const POLE_PAR_ROLE = {
 export async function getNotifications(user, role) {
   const items = [];
 
-  // 1) Annonces récentes — visibles par tous les rôles
+  // 1) Annonces récentes — filtrées selon le groupe du lecteur
+  //    (communiqués globaux de l'admin + communiqués de son propre groupe)
   try {
-    const annonces = await getAnnonces(); // déjà triées du plus récent au plus ancien
+    const annonces = await getAnnoncesVisibles(user, role); // déjà triées du plus récent au plus ancien
     annonces.slice(0, 10).forEach((a) => {
       items.push({
         id: "an-" + a.id,

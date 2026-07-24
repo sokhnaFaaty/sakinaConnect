@@ -6,19 +6,46 @@ import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
 import { getSession, getUserRole } from "../utils/auth.js";
-import { getAnnonces, createAnnonce, deleteAnnonce } from "../services/annonceService.js";
+import { getAnnoncesVisibles, getGroupeIdDuLecteur, createAnnonce, deleteAnnonce } from "../services/annonceService.js";
 import { getUtilisateurs } from "../services/utilisateurService.js";
 import { getGuides } from "../services/guideService.js";
+import { getGroupes } from "../services/groupeService.js";
 
 const ROLE_LABELS = { ADMIN: "Administrateur", GUIDE: "Guide", PELERIN: "Pèlerin", PROCHE: "Proche" };
 const PER_PAGE = 3;
 
 // ---------- Modal de publication ----------
-function openPublierAnnonce(user, onDone) {
+// groupeId : null => communiqué global (tous les pèlerins) ; <id> => réservé à ce groupe.
+// - GUIDE : la cible est forcée sur son groupe (pas de choix).
+// - ADMIN : un select dynamique permet de viser « Tous les pèlerins » ou un groupe précis.
+function openPublierAnnonce(user, role, groupeId, groupes, onDone) {
+  const isAdmin = role === "ADMIN";
+
+  // Bloc de ciblage : select pour l'admin, bandeau informatif pour le guide.
+  const blocCible = isAdmin
+    ? `
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="annonceGroupe">Destinataires du communiqué *</label>
+        <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="annonceGroupe">
+          <option value="">Tous les pèlerins (communiqué général)</option>
+          ${groupes.map((g) => `<option value="${escapeHtml(g.id)}">Groupe : ${escapeHtml(g.nom)}</option>`).join("")}
+        </select>
+      </div>
+    `
+    : `
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-600">
+        <i class="fa-solid fa-circle-info text-[#333D2A]"></i>
+        Ce communiqué sera adressé aux <span class="font-black text-[#333D2A]">pèlerins de ton groupe</span>.
+      </div>
+    `;
+
+  const porteeUrgence = isAdmin ? "les pèlerins concernés" : "les pèlerins de ton groupe";
+
   openModal({
     title: "Diffuser un message système",
     icon: "fa-bullhorn",
     body: `
+      ${blocCible}
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="annonceTitre">Titre du communiqué *</label>
         <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="annonceTitre" placeholder="Ex: Modification de la ligne de Bus de la Mecque" />
@@ -31,7 +58,7 @@ function openPublierAnnonce(user, onDone) {
       </div>
       <label class="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-slate-700">
         <input type="checkbox" id="annonceUrgent" class="h-5 w-5 accent-rose-600" />
-        <span>Marquer comme urgent (affiche un bandeau rouge chez tous les pèlerins)</span>
+        <span>Marquer comme urgent (affiche un bandeau rouge chez ${escapeHtml(porteeUrgence)})</span>
       </label>
     `,
     confirmLabel: "Publier l'annonce",
@@ -40,6 +67,8 @@ function openPublierAnnonce(user, onDone) {
       const titre = modal.querySelector("#annonceTitre").value.trim();
       const contenu = modal.querySelector("#annonceContenu").value.trim();
       const urgence = modal.querySelector("#annonceUrgent").checked;
+      // Admin : cible choisie dans le select (vide => global). Guide : son groupe forcé.
+      const cibleGroupeId = isAdmin ? (modal.querySelector("#annonceGroupe").value || null) : groupeId;
 
       let hasError = false;
       const titreError = validateField(titre, "Le titre");
@@ -51,7 +80,7 @@ function openPublierAnnonce(user, onDone) {
       if (hasError) return false;
 
       try {
-        await createAnnonce({ titre, contenu, urgence, auteurId: user.id });
+        await createAnnonce({ titre, contenu, urgence, auteurId: user.id, groupeId: cibleGroupeId });
         showToast("Communiqué publié.");
         await onDone();
         return true;
@@ -69,17 +98,22 @@ export async function renderAnnoncePage() {
   const user = getSession();
   const role = getUserRole();
 
-  const [annonces, utilisateurs, guides] = await Promise.all([
-    getAnnonces(),
+  const [annonces, utilisateurs, guides, monGroupeId, groupes] = await Promise.all([
+    getAnnoncesVisibles(user, role),
     getUtilisateurs(),
     getGuides(),
+    getGroupeIdDuLecteur(user, role),
+    role === "ADMIN" ? getGroupes() : Promise.resolve([]),
   ]);
 
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
   const guideMap = Object.fromEntries(guides.map((g) => [g.id, g]));
 
   // Seuls l'admin et le guide publient ; le pèlerin consulte en lecture seule.
-  const peutPublier = role === "ADMIN" || role === "GUIDE";
+  // Un guide sans groupe assigné ne peut pas publier (il n'a personne à qui adresser le message).
+  const peutPublier = role === "ADMIN" || (role === "GUIDE" && !!monGroupeId);
+  // Portée du communiqué à la publication : admin => global (null), guide => son groupe.
+  const groupeIdPublication = role === "GUIDE" ? monGroupeId : null;
 
   // Auteur : via auteurId (nouveau), avec repli sur guideId (ancienne annonce du JSON)
   const auteur = (a) => {
@@ -92,11 +126,22 @@ export async function renderAnnoncePage() {
 
   const peutSupprimer = (a) => role === "ADMIN" || (a.auteurId && a.auteurId === user.id);
 
+  // Nom du groupe ciblé (connu surtout côté admin qui charge la liste des groupes)
+  const groupeMap = Object.fromEntries(groupes.map((g) => [g.id, g.nom]));
+  const libelleCible = (a) => {
+    if (!a.groupeId) return "Général";
+    const nom = groupeMap[a.groupeId];
+    return nom ? `Groupe : ${nom}` : "Mon groupe";
+  };
+
   const carte = (a, numero) => `
     <article class="rounded-3xl border border-slate-200 ${a.urgence ? "border-l-4 border-l-[#B40909]" : ""} bg-white p-5 shadow-sm">
       <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="rounded-md bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">A-${String(numero).padStart(2, "0")}</span>
+          ${a.groupeId
+            ? `<span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-bold text-violet-700"><i class="fa-solid fa-people-group"></i> ${escapeHtml(libelleCible(a))}</span>`
+            : `<span class="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700"><i class="fa-solid fa-globe"></i> Général</span>`}
           ${a.urgence ? `<span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-black text-rose-700">Alerte Urgente</span>` : ""}
         </div>
         <div class="flex items-center gap-4 text-xs text-slate-500">
@@ -137,7 +182,7 @@ export async function renderAnnoncePage() {
   `;
 
   const addBtn = document.getElementById("addAnnonceBtn");
-  if (addBtn) addBtn.addEventListener("click", () => openPublierAnnonce(user, renderAnnoncePage));
+  if (addBtn) addBtn.addEventListener("click", () => openPublierAnnonce(user, role, groupeIdPublication, groupes, renderAnnoncePage));
 
   let search = "";
   let urgentOnly = false;
