@@ -1,5 +1,6 @@
 import { pageHeader } from "../components/pageHeader.js";
 import { renderTable } from "../components/table.js";
+import { pagination, bindPagination } from "../components/pagination.js";
 import { escapeHtml } from "../utils/html.js";
 import { getSession } from "../utils/auth.js";
 import { getGuideByUtilisateurId, getGroupeDuGuide } from "../services/guideService.js";
@@ -148,20 +149,10 @@ const renderGroupePelerins = () => {
     ],
   });
 
-  paginationEl.innerHTML = totalPages > 1
-    ? Array.from({ length: totalPages }, (_, i) => i + 1)
-        .map((page) => `
-          <button data-page-groupe="${page}" class="h-8 w-8 rounded-full text-xs font-bold transition ${
-            page === groupePageActuelle ? "bg-[#333D2A] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }">${page}</button>
-        `).join("")
-    : "";
-
-  paginationEl.querySelectorAll("[data-page-groupe]").forEach((button) => {
-    button.addEventListener("click", () => {
-      groupePageActuelle = Number(button.dataset.pageGroupe);
-      renderGroupePelerins();
-    });
+  paginationEl.innerHTML = pagination(groupePageActuelle, totalPages);
+  bindPagination(paginationEl, (page) => {
+    groupePageActuelle = page;
+    renderGroupePelerins();
   });
 
   listEl.querySelectorAll("[data-view-pelerin]").forEach((button) => {
@@ -181,7 +172,7 @@ document.getElementById("groupePelerinsSearch").addEventListener("input", (e) =>
 });
 }
       const PLANNING_PAR_PAGE = 2;
-const PELERINS_PAR_PAGE = 2;
+const PELERINS_PAR_PAGE = 8;
 let planningPageActuelle = 1;
 
 function renderPlanningPanel(planning) {
