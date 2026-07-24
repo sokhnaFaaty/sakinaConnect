@@ -64,7 +64,7 @@ export async function renderSuiviFamilialPage() {
     getPlanningDuGroupe(groupe ? groupe.id : "___"),
     getCategories(),
   ]);
-  const categorieMap = Object.fromEntries(categories.map((c) => [c.idCategorie, c.libelle]));
+  const categorieMap = Object.fromEntries(categories.map((c) => [c.id, c.libelle]));
 
   app.innerHTML = `
     <section>

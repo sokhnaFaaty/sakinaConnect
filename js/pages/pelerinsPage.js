@@ -524,11 +524,11 @@ export async function renderPelerinsPage() {
       <i class="fa-solid fa-trash"></i>
     </button>`;
 
-  const tableHtml = () => `
+  const tableHtml = (rows) => `
     <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
       ${renderTable({
-        rows: pelerins,
-        emptyMessage: "Aucun pèlerin enregistré.",
+        rows,
+        emptyMessage: "Aucun pèlerin ne correspond à votre recherche.",
         columns: [
           { label: "Image", render: (p) => avatarHtml(p) },
           { label: "Nom", render: (p) => `<strong class="font-bold text-slate-950">${nomHtml(p)}</strong>` },
@@ -541,9 +541,9 @@ export async function renderPelerinsPage() {
       })}
     </article>`;
 
-  const cardsHtml = () => pelerins.length
+  const cardsHtml = (rows) => rows.length
     ? `<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        ${pelerins.map((p) => `
+        ${rows.map((p) => `
           <article class="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="flex-1 p-5">
               <div class="mb-3 flex items-center gap-3">
@@ -563,7 +563,26 @@ export async function renderPelerinsPage() {
           </article>
         `).join("")}
       </div>`
-    : `<div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm">Aucun pèlerin enregistré.</div>`;
+    : `<div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm">Aucun pèlerin ne correspond à votre recherche.</div>`;
+
+  // Filtre courant : texte de recherche (nom / passeport) + groupe sélectionné
+  let searchTerm = "";
+  let groupeFilter = "";
+
+  const getFilteredPelerins = () => {
+    const terme = searchTerm.trim().toLowerCase();
+    return pelerins.filter((p) => {
+      const nom = String(utilisateurMap[p.utilisateurId]?.nomComplet || "").toLowerCase();
+      const passeport = String(p.numeroPasseport || "").toLowerCase();
+      const matcheRecherche = !terme || nom.includes(terme) || passeport.includes(terme);
+      const matcheGroupe = !groupeFilter || p.groupeId === groupeFilter;
+      return matcheRecherche && matcheGroupe;
+    });
+  };
+
+  const optionsGroupesFiltre = groupes
+    .map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.nom)}</option>`)
+    .join("");
 
   app.innerHTML = `
     <section>
@@ -575,7 +594,19 @@ export async function renderPelerinsPage() {
         actionId: "addPelerinBtn",
         actionIcon: "fa-user-plus",
       })}
-      <div class="mb-4 flex justify-end" id="pelToggle"></div>
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <div class="relative flex-1 sm:max-w-xs">
+            <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
+            <input id="pelSearch" type="search" placeholder="Rechercher un pèlerin (nom, passeport)…" class="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm" />
+          </div>
+          <select id="pelGroupeFilter" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm sm:w-56">
+            <option value="">Tous les groupes</option>
+            ${optionsGroupesFiltre}
+          </select>
+        </div>
+        <div id="pelToggle"></div>
+      </div>
       <div id="pelList"></div>
     </section>
   `;
@@ -583,14 +614,29 @@ export async function renderPelerinsPage() {
   document.getElementById("addPelerinBtn").addEventListener("click", () => openPelerinForm());
 
   let view = getSavedView("pelerins", "table");
+
+  const renderList = () => {
+    const rows = getFilteredPelerins();
+    document.getElementById("pelList").innerHTML = view === "card" ? cardsHtml(rows) : tableHtml(rows);
+    bindPelerinRowEvents(pelerins, utilisateurMap, groupeMap, hotels, guides);
+  };
+
   const draw = () => {
     const toggleEl = document.getElementById("pelToggle");
     toggleEl.innerHTML = viewToggle(view);
-    document.getElementById("pelList").innerHTML = view === "card" ? cardsHtml() : tableHtml();
     bindViewToggle(toggleEl, (v) => { view = v; saveView("pelerins", v); draw(); });
-    bindPelerinRowEvents(pelerins, utilisateurMap, groupeMap, hotels, guides);
+    renderList();
   };
   draw();
+
+  document.getElementById("pelSearch").addEventListener("input", (e) => {
+    searchTerm = e.target.value;
+    renderList();
+  });
+  document.getElementById("pelGroupeFilter").addEventListener("change", (e) => {
+    groupeFilter = e.target.value;
+    renderList();
+  });
 }
 
 function bindPelerinRowEvents(pelerins, utilisateurMap, groupeMap, hotels, guides) {

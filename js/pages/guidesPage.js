@@ -238,17 +238,17 @@ export async function renderGuidesPage() {
       <i class="fa-solid fa-trash"></i>
     </button>`;
 
-  const cardsHtml = () => guides.length
+  const cardsHtml = (rows) => rows.length
     ? `<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        ${guides.map((guide) => guideCard(guide, utilisateurMap[guide.utilisateurId], groupesParGuide[guide.id] || [])).join("")}
+        ${rows.map((guide) => guideCard(guide, utilisateurMap[guide.utilisateurId], groupesParGuide[guide.id] || [])).join("")}
       </div>`
-    : `<div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm">Aucun guide enregistré pour l'instant.</div>`;
+    : `<div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center text-sm text-slate-400 shadow-sm">Aucun guide ne correspond à votre recherche.</div>`;
 
-  const tableHtml = () => `
+  const tableHtml = (rows) => `
     <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
       ${renderTable({
-        rows: guides,
-        emptyMessage: "Aucun guide enregistré pour l'instant.",
+        rows,
+        emptyMessage: "Aucun guide ne correspond à votre recherche.",
         columns: [
           { label: "Image", render: (guide) => guideAvatar(utilisateurMap[guide.utilisateurId]) },
           { label: "Nom", render: (guide) => `<strong class="font-bold text-slate-950">${escapeHtml(utilisateurMap[guide.utilisateurId]?.nomComplet || "-")}</strong>` },
@@ -263,6 +263,27 @@ export async function renderGuidesPage() {
       })}
     </article>`;
 
+  // Filtre courant : texte de recherche (nom / téléphone / email) + groupe assigné
+  let searchTerm = "";
+  let groupeFilter = "";
+
+  const getFilteredGuides = () => {
+    const terme = searchTerm.trim().toLowerCase();
+    return guides.filter((guide) => {
+      const u = utilisateurMap[guide.utilisateurId] || {};
+      const nom = String(u.nomComplet || "").toLowerCase();
+      const tel = String(u.telephone || "").toLowerCase();
+      const email = String(u.email || "").toLowerCase();
+      const matcheRecherche = !terme || nom.includes(terme) || tel.includes(terme) || email.includes(terme);
+      const matcheGroupe = !groupeFilter || (groupesParGuide[guide.id] || []).some((g) => g.id === groupeFilter);
+      return matcheRecherche && matcheGroupe;
+    });
+  };
+
+  const optionsGroupesFiltre = groupes
+    .map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.nom)}</option>`)
+    .join("");
+
   app.innerHTML = `
     <section>
       ${pageHeader({
@@ -273,7 +294,19 @@ export async function renderGuidesPage() {
         actionId: "addGuideBtn",
         actionIcon: "fa-user-plus",
       })}
-      <div class="mb-4 flex justify-end" id="guideToggle"></div>
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <div class="relative flex-1 sm:max-w-xs">
+            <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
+            <input id="guideSearch" type="search" placeholder="Rechercher un guide (nom, tél, email)…" class="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm" />
+          </div>
+          <select id="guideGroupeFilter" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm sm:w-56">
+            <option value="">Tous les groupes</option>
+            ${optionsGroupesFiltre}
+          </select>
+        </div>
+        <div id="guideToggle"></div>
+      </div>
       <div id="guideList"></div>
     </section>
   `;
@@ -283,14 +316,29 @@ export async function renderGuidesPage() {
   );
 
   let view = getSavedView("guides", "card");
+
+  const renderList = () => {
+    const rows = getFilteredGuides();
+    document.getElementById("guideList").innerHTML = view === "card" ? cardsHtml(rows) : tableHtml(rows);
+    bindGuideRowEvents(guides, utilisateurMap);
+  };
+
   const draw = () => {
     const toggleEl = document.getElementById("guideToggle");
     toggleEl.innerHTML = viewToggle(view);
-    document.getElementById("guideList").innerHTML = view === "card" ? cardsHtml() : tableHtml();
     bindViewToggle(toggleEl, (v) => { view = v; saveView("guides", v); draw(); });
-    bindGuideRowEvents(guides, utilisateurMap);
+    renderList();
   };
   draw();
+
+  document.getElementById("guideSearch").addEventListener("input", (e) => {
+    searchTerm = e.target.value;
+    renderList();
+  });
+  document.getElementById("guideGroupeFilter").addEventListener("change", (e) => {
+    groupeFilter = e.target.value;
+    renderList();
+  });
 }
 
 function bindGuideRowEvents(guides, utilisateurMap) {
