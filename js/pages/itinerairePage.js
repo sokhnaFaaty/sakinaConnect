@@ -15,6 +15,9 @@ import {
   createPlanningEvent,
   updatePlanningEvent,
   deletePlanningEvent,
+  filtrerPlanningVisible,
+  statutEvenement,
+  STATUT_EVENEMENT,
 } from "../services/planningService.js";
 import { creerCarte, centrerCarteSur } from "../components/leafletMap.js";
 
@@ -28,7 +31,16 @@ let etatPage = {
   filtreJour: "tous",
   filtreCategorie: "tous",
   pageActuelle: 1,
+  role: null,
+  userId: null,
 };
+
+// Charge le planning d'un groupe puis ne garde que les événements visibles par
+// le lecteur (approuvés pour les pèlerins ; ses propres brouillons pour le guide auteur).
+async function chargerPlanningVisible(groupeId) {
+  const planning = await getPlanningDuGroupe(groupeId);
+  return filtrerPlanningVisible(planning, { role: etatPage.role, userId: etatPage.userId });
+}
 
 export async function renderItinerairePage() {
   const app = document.getElementById("app");
@@ -120,14 +132,17 @@ export async function renderItinerairePage() {
   `;
 
   etatPage = {
-    planning: await getPlanningDuGroupe(groupeSelectionne.id),
+    planning: [],
     categories,
     groupeId: groupeSelectionne.id,
     filtreJour: "tous",
     filtreCategorie: "tous",
     pageActuelle: 1,
     canEdit,
+    role,
+    userId: user.id,
   };
+  etatPage.planning = await chargerPlanningVisible(groupeSelectionne.id);
 
   afficherFiltresJour();
   afficherFiltresCategorie();
@@ -141,7 +156,7 @@ export async function renderItinerairePage() {
   if (select) {
     select.addEventListener("change", async () => {
       etatPage.groupeId = select.value;
-      etatPage.planning = await getPlanningDuGroupe(select.value);
+      etatPage.planning = await chargerPlanningVisible(select.value);
       etatPage.pageActuelle = 1;
       afficherFiltresJour();
       rafraichirAffichage();
@@ -253,7 +268,7 @@ function rafraichirAffichage() {
           try {
             await deletePlanningEvent(id);
             showToast("Événement supprimé.");
-            etatPage.planning = await getPlanningDuGroupe(etatPage.groupeId);
+            etatPage.planning = await chargerPlanningVisible(etatPage.groupeId);
             rafraichirAffichage();
           } catch (error) {
             showToast(error.message, "error");
@@ -277,6 +292,18 @@ function rafraichirAffichage() {
   afficherPagination(totalPages);
 }
 
+// Badge de statut de validation d'un événement (visible surtout par l'auteur et l'admin)
+function statutBadgeEvenement(evenement) {
+  const st = statutEvenement(evenement);
+  if (st === STATUT_EVENEMENT.EN_ATTENTE) {
+    return `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700"><i class="fa-solid fa-clock"></i> En attente</span>`;
+  }
+  if (st === STATUT_EVENEMENT.REJETE) {
+    return `<span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700"><i class="fa-solid fa-circle-xmark"></i> Rejeté</span>`;
+  }
+  return "";
+}
+
 function carteEvenement(evenement, categorieMap) {
   // Calcule "Jour X" à partir du rang de sa date parmi les jours uniques triés
   const joursUniques = [...new Set(etatPage.planning.map((e) => e.date))].sort();
@@ -290,6 +317,7 @@ function carteEvenement(evenement, categorieMap) {
           <span class="rounded-full bg-[#333D2A] px-2.5 py-0.5 text-[10px] font-black uppercase text-white">Jour ${numeroJour}</span>
           <span class="text-xs font-bold text-slate-400">${escapeHtml(evenement.heure)}</span>
           <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">${escapeHtml(categorieLabel)}</span>
+          ${statutBadgeEvenement(evenement)}
         </div>
         <button data-voir-carte="${escapeHtml(evenement.id)}" class="flex items-center gap-1 text-xs font-bold text-[#333D2A] hover:underline">
           <i class="fa-solid fa-location-dot"></i> ${escapeHtml(evenement.lieu)}
@@ -304,6 +332,12 @@ function carteEvenement(evenement, categorieMap) {
 
       <h3 class="font-black text-slate-900">${escapeHtml(evenement.titre)}</h3>
       <p class="mt-1 text-sm text-slate-500">${escapeHtml(evenement.description)}</p>
+
+      ${statutEvenement(evenement) === STATUT_EVENEMENT.REJETE && evenement.motifRejet ? `
+        <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+          <i class="fa-solid fa-circle-exclamation"></i> Motif du rejet : ${escapeHtml(evenement.motifRejet)}
+        </div>
+      ` : ""}
 
       ${etatPage.canEdit ? `
       <div class="mt-3 flex gap-4 text-xs font-extrabold">
@@ -449,15 +483,23 @@ function ouvrirFormulaireEvenement(evenement) {
       });
       if (hasError) return false;
 
+      const estGuide = etatPage.role === "GUIDE";
+
       try {
         if (evenement) {
-          await updatePlanningEvent(evenement.id, { date, heure, titre, lieu, categorieId, etapeGuide, description });
-          showToast("Événement modifié avec succès.");
+          // Le guide qui modifie son événement le re-soumet à validation ; l'admin garde le statut.
+          const champsStatut = estGuide
+            ? { statut: STATUT_EVENEMENT.EN_ATTENTE, motifRejet: "" }
+            : {};
+          await updatePlanningEvent(evenement.id, { date, heure, titre, lieu, categorieId, etapeGuide, description, ...champsStatut });
+          showToast(estGuide ? "Événement renvoyé pour validation." : "Événement modifié avec succès.");
         } else {
-          await createPlanningEvent({ date, heure, titre, lieu, categorieId, etapeGuide, description, groupeId: etatPage.groupeId });
-          showToast("Événement créé avec succès.");
+          // Guide : en attente de validation ; admin : approuvé directement.
+          const statut = estGuide ? STATUT_EVENEMENT.EN_ATTENTE : STATUT_EVENEMENT.APPROUVE;
+          await createPlanningEvent({ date, heure, titre, lieu, categorieId, etapeGuide, description, groupeId: etatPage.groupeId, auteurId: etatPage.userId, statut });
+          showToast(estGuide ? "Événement envoyé pour validation." : "Événement créé avec succès.");
         }
-        etatPage.planning = await getPlanningDuGroupe(etatPage.groupeId);
+        etatPage.planning = await chargerPlanningVisible(etatPage.groupeId);
         afficherFiltresJour();
         rafraichirAffichage();
         return true;

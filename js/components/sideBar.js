@@ -8,6 +8,7 @@ const NAV_LINKS_BY_ROLE = {
     { page: "pelerins", label: "Liste des Pèlerins", icon: "fa-users" },
       { page: "itineraire", label: "Itinéraire Voyage", icon: "fa-route" },
     { page: "annonces", label: "Tableau d'affichage", icon: "fa-bullhorn" },
+    { page: "validation", label: "À valider", icon: "fa-clipboard-check" },
     { page: "pole-urgence", label: "Pôle d'Urgence SOS", icon: "fa-triangle-exclamation" },
     { page: "archives", label: "Liste des Archives", icon: "fa-box-archive" },
   ],

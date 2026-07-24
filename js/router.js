@@ -21,6 +21,7 @@ import { renderMonGroupePelerinPage } from "./pages/monGroupePelerinPage.js";
 import { renderSuiviFamilialPage } from "./pages/suiviFamilialPage.js";
 import { renderProfilProchePage } from "./pages/profilProchePage.js";
 import { renderArchivesPage } from "./pages/archivesPage.js";
+import { renderValidationPage } from "./pages/validationPage.js";
 
 const routes = {
   login: renderLoginPage,
@@ -28,6 +29,7 @@ const routes = {
   pelerins: renderPelerinsPage,
   "annuaire-guides": renderGuidesPage,
   annonces: renderAnnoncePage,
+  validation: renderValidationPage,
   "dashboard-admin": renderDashboardAdminPage,
   "dashboard-guide": renderDashboardGuidePage,
   "dashboard-proche": renderDashboardProchePage,
@@ -52,6 +54,7 @@ const ROUTE_PERMISSIONS = {
   pelerins: [ROLES.ADMIN],
   "annuaire-guides": [ROLES.ADMIN],
   annonces: [ROLES.ADMIN, ROLES.GUIDE, ROLES.PELERIN],
+  validation: [ROLES.ADMIN],
   "dashboard-admin": [ROLES.ADMIN],
   "dashboard-guide": [ROLES.GUIDE],
   "dashboard-proche": [ROLES.PROCHE],
