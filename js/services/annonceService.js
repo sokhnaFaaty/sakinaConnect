@@ -2,6 +2,9 @@ import { ENDPOINTS } from "../config/api.js";
 import { apiRequest } from "./apiClient.js";
 import { createId } from "../utils/id.js";
 import { required } from "../utils/validators.js";
+import { getGuideByUtilisateurId, getGroupeDuGuide } from "./guideService.js";
+import { getPelerins, getPelerinByUtilisateurId } from "./pelerinService.js";
+import { getProcheByUtilisateurId } from "./procheService.js";
 
 // Uniformise la forme d'une annonce (communiqué) avant envoi au serveur
 function normalizeAnnonce(data) {
@@ -20,6 +23,43 @@ function normalizeAnnonce(data) {
 export async function getAnnonces() {
   const annonces = await apiRequest(ENDPOINTS.annonces, {}, "Impossible de charger les communiqués.");
   return annonces.sort((a, b) => String(b.datePublication).localeCompare(String(a.datePublication)));
+}
+
+/**
+ * Résout l'id du groupe auquel appartient l'utilisateur connecté (ou null s'il n'en a pas).
+ * GUIDE -> son groupe assigné ; PELERIN -> son groupe ; PROCHE -> le groupe de son pèlerin.
+ */
+export async function getGroupeIdDuLecteur(user, role) {
+  if (role === "GUIDE") {
+    const guide = await getGuideByUtilisateurId(user.id);
+    const groupe = guide ? await getGroupeDuGuide(guide.id) : null;
+    return groupe?.id || null;
+  }
+  if (role === "PELERIN") {
+    const pelerin = await getPelerinByUtilisateurId(user.id);
+    return pelerin?.groupeId || null;
+  }
+  if (role === "PROCHE") {
+    const proche = await getProcheByUtilisateurId(user.id);
+    if (!proche) return null;
+    const pelerins = await getPelerins();
+    const pelerin = pelerins.find((p) => p.id === proche.pelerinId);
+    return pelerin?.groupeId || null;
+  }
+  return null;
+}
+
+/**
+ * Annonces visibles par l'utilisateur connecté :
+ * - ADMIN : toutes les annonces ;
+ * - autres rôles : les communiqués globaux (groupeId null, publiés par l'admin)
+ *   + ceux adressés à leur propre groupe.
+ */
+export async function getAnnoncesVisibles(user, role) {
+  const annonces = await getAnnonces();
+  if (role === "ADMIN") return annonces;
+  const groupeId = await getGroupeIdDuLecteur(user, role);
+  return annonces.filter((a) => !a.groupeId || a.groupeId === groupeId);
 }
 
 /**
