@@ -271,9 +271,9 @@ export async function renderGuidesPage() {
     const terme = searchTerm.trim().toLowerCase();
     return guides.filter((guide) => {
       const u = utilisateurMap[guide.utilisateurId] || {};
-      const nom = String(u.nomComplet || "").toLowerCase();
-      const tel = String(u.telephone || "").toLowerCase();
-      const email = String(u.email || "").toLowerCase();
+      const nom = (u.nomComplet || "").toLowerCase();
+      const tel = (u.telephone || "").toLowerCase();
+      const email = (u.email || "").toLowerCase();
       const matcheRecherche = !terme || nom.includes(terme) || tel.includes(terme) || email.includes(terme);
       const matcheGroupe = !groupeFilter || (groupesParGuide[guide.id] || []).some((g) => g.id === groupeFilter);
       return matcheRecherche && matcheGroupe;

@@ -6,40 +6,72 @@ import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { showError, hideError, validateField } from "../utils/formValidator.js";
 import { getSession, getUserRole } from "../utils/auth.js";
-import { getAnnonces, createAnnonce, deleteAnnonce } from "../services/annonceService.js";
+import { getAnnoncesVisibles, getGroupeIdDuLecteur, createAnnonce, updateAnnonce, deleteAnnonce, statutAnnonce, STATUT_ANNONCE } from "../services/annonceService.js";
 import { getUtilisateurs } from "../services/utilisateurService.js";
 import { getGuides } from "../services/guideService.js";
+import { getGroupes } from "../services/groupeService.js";
 
 const ROLE_LABELS = { ADMIN: "Administrateur", GUIDE: "Guide", PELERIN: "Pèlerin", PROCHE: "Proche" };
 const PER_PAGE = 3;
 
-// ---------- Modal de publication ----------
-function openPublierAnnonce(user, onDone) {
+// ---------- Modal de publication / édition ----------
+// annonce : null => création ; objet => édition.
+// groupeId : null => communiqué global (tous les pèlerins) ; <id> => réservé à ce groupe.
+// - GUIDE : la cible est forcée sur son groupe ; sa publication passe « en attente » de validation.
+// - ADMIN : un select dynamique permet de viser « Tous les pèlerins » ou un groupe précis ;
+//           sa publication est directement approuvée.
+function openFormAnnonce(user, role, groupeId, groupes, annonce, onDone) {
+  const isAdmin = role === "ADMIN";
+  const isEdit = !!annonce;
+
+  // Bloc de ciblage : select pour l'admin, bandeau informatif pour le guide.
+  const blocCible = isAdmin
+    ? `
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="annonceGroupe">Destinataires du communiqué *</label>
+        <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="annonceGroupe">
+          <option value="" ${annonce && !annonce.groupeId ? "selected" : ""}>Tous les pèlerins (communiqué général)</option>
+          ${groupes.map((g) => `<option value="${escapeHtml(g.id)}" ${annonce && annonce.groupeId === g.id ? "selected" : ""}>Groupe : ${escapeHtml(g.nom)}</option>`).join("")}
+        </select>
+      </div>
+    `
+    : `
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-600">
+        <i class="fa-solid fa-circle-info text-[#333D2A]"></i>
+        Ce communiqué sera adressé aux <span class="font-black text-[#333D2A]">pèlerins de ton groupe</span>, après validation par l'administrateur.
+      </div>
+    `;
+
+  const porteeUrgence = isAdmin ? "les pèlerins concernés" : "les pèlerins de ton groupe";
+
   openModal({
-    title: "Diffuser un message système",
+    title: isEdit ? "Modifier le communiqué" : "Diffuser un message système",
     icon: "fa-bullhorn",
+    confirmLabel: isEdit ? "Enregistrer" : "Publier l'annonce",
+    confirmIcon: isEdit ? "fa-floppy-disk" : "fa-paper-plane",
     body: `
+      ${blocCible}
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="annonceTitre">Titre du communiqué *</label>
-        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="annonceTitre" placeholder="Ex: Modification de la ligne de Bus de la Mecque" />
+        <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" type="text" id="annonceTitre" value="${escapeHtml(annonce?.titre || "")}" placeholder="Ex: Modification de la ligne de Bus de la Mecque" />
         <p id="annonceTitreError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="annonceContenu">Contenu du message *</label>
-        <textarea class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="annonceContenu" rows="4" placeholder="Décrivez clairement et précisément les détails ..."></textarea>
+        <textarea class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" id="annonceContenu" rows="4" placeholder="Décrivez clairement et précisément les détails ...">${escapeHtml(annonce?.contenu || "")}</textarea>
         <p id="annonceContenuError" class="mt-1 hidden text-xs text-rose-600"></p>
       </div>
       <label class="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-slate-700">
-        <input type="checkbox" id="annonceUrgent" class="h-5 w-5 accent-rose-600" />
-        <span>Marquer comme urgent (affiche un bandeau rouge chez tous les pèlerins)</span>
+        <input type="checkbox" id="annonceUrgent" class="h-5 w-5 accent-rose-600" ${annonce?.urgence ? "checked" : ""} />
+        <span>Marquer comme urgent (affiche un bandeau rouge chez ${escapeHtml(porteeUrgence)})</span>
       </label>
     `,
-    confirmLabel: "Publier l'annonce",
-    confirmIcon: "fa-paper-plane",
     onConfirm: async (modal) => {
       const titre = modal.querySelector("#annonceTitre").value.trim();
       const contenu = modal.querySelector("#annonceContenu").value.trim();
       const urgence = modal.querySelector("#annonceUrgent").checked;
+      // Admin : cible choisie dans le select (vide => global). Guide : son groupe forcé.
+      const cibleGroupeId = isAdmin ? (modal.querySelector("#annonceGroupe").value || null) : groupeId;
 
       let hasError = false;
       const titreError = validateField(titre, "Le titre");
@@ -51,8 +83,20 @@ function openPublierAnnonce(user, onDone) {
       if (hasError) return false;
 
       try {
-        await createAnnonce({ titre, contenu, urgence, auteurId: user.id });
-        showToast("Communiqué publié.");
+        if (isEdit) {
+          // Le guide qui modifie sa propre annonce la re-soumet à validation ;
+          // l'admin conserve le statut existant.
+          const champsStatut = role === "GUIDE"
+            ? { statut: STATUT_ANNONCE.EN_ATTENTE, motifRejet: "" }
+            : {};
+          await updateAnnonce(annonce.id, { titre, contenu, urgence, groupeId: cibleGroupeId, ...champsStatut });
+          showToast(role === "GUIDE" ? "Communiqué renvoyé pour validation." : "Communiqué modifié.");
+        } else {
+          // Guide : en attente de validation ; admin : approuvé directement.
+          const statut = role === "GUIDE" ? STATUT_ANNONCE.EN_ATTENTE : STATUT_ANNONCE.APPROUVE;
+          await createAnnonce({ titre, contenu, urgence, auteurId: user.id, groupeId: cibleGroupeId, statut });
+          showToast(role === "GUIDE" ? "Communiqué envoyé pour validation." : "Communiqué publié.");
+        }
         await onDone();
         return true;
       } catch (error) {
@@ -69,17 +113,22 @@ export async function renderAnnoncePage() {
   const user = getSession();
   const role = getUserRole();
 
-  const [annonces, utilisateurs, guides] = await Promise.all([
-    getAnnonces(),
+  const [annonces, utilisateurs, guides, monGroupeId, groupes] = await Promise.all([
+    getAnnoncesVisibles(user, role),
     getUtilisateurs(),
     getGuides(),
+    getGroupeIdDuLecteur(user, role),
+    role === "ADMIN" ? getGroupes() : Promise.resolve([]),
   ]);
 
   const utilisateurMap = Object.fromEntries(utilisateurs.map((u) => [u.id, u]));
   const guideMap = Object.fromEntries(guides.map((g) => [g.id, g]));
 
   // Seuls l'admin et le guide publient ; le pèlerin consulte en lecture seule.
-  const peutPublier = role === "ADMIN" || role === "GUIDE";
+  // Un guide sans groupe assigné ne peut pas publier (il n'a personne à qui adresser le message).
+  const peutPublier = role === "ADMIN" || (role === "GUIDE" && !!monGroupeId);
+  // Portée du communiqué à la publication : admin => global (null), guide => son groupe.
+  const groupeIdPublication = role === "GUIDE" ? monGroupeId : null;
 
   // Auteur : via auteurId (nouveau), avec repli sur guideId (ancienne annonce du JSON)
   const auteur = (a) => {
@@ -91,22 +140,54 @@ export async function renderAnnoncePage() {
   };
 
   const peutSupprimer = (a) => role === "ADMIN" || (a.auteurId && a.auteurId === user.id);
+  // Admin peut éditer tout communiqué ; le guide édite les siens (re-soumis à validation).
+  const peutModifier = (a) => role === "ADMIN" || (a.auteurId && a.auteurId === user.id);
+
+  // Nom du groupe ciblé (connu surtout côté admin qui charge la liste des groupes)
+  const groupeMap = Object.fromEntries(groupes.map((g) => [g.id, g.nom]));
+  const libelleCible = (a) => {
+    if (!a.groupeId) return "Général";
+    const nom = groupeMap[a.groupeId];
+    return nom ? `Groupe : ${nom}` : "Mon groupe";
+  };
+
+  // Badge de statut de validation (affiché surtout à l'auteur et à l'admin)
+  const statutBadge = (a) => {
+    const st = statutAnnonce(a);
+    if (st === STATUT_ANNONCE.EN_ATTENTE) {
+      return `<span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700"><i class="fa-solid fa-clock"></i> En attente de validation</span>`;
+    }
+    if (st === STATUT_ANNONCE.REJETE) {
+      return `<span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-700"><i class="fa-solid fa-circle-xmark"></i> Rejeté</span>`;
+    }
+    return "";
+  };
 
   const carte = (a, numero) => `
     <article class="rounded-3xl border border-slate-200 ${a.urgence ? "border-l-4 border-l-[#B40909]" : ""} bg-white p-5 shadow-sm">
       <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="rounded-md bg-[#F2F2DE] px-2 py-0.5 text-xs font-bold text-[#333D2A]">A-${String(numero).padStart(2, "0")}</span>
+          ${a.groupeId
+            ? `<span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-bold text-violet-700"><i class="fa-solid fa-people-group"></i> ${escapeHtml(libelleCible(a))}</span>`
+            : `<span class="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700"><i class="fa-solid fa-globe"></i> Général</span>`}
           ${a.urgence ? `<span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-black text-rose-700">Alerte Urgente</span>` : ""}
+          ${statutBadge(a)}
         </div>
         <div class="flex items-center gap-4 text-xs text-slate-500">
           <span><i class="fa-regular fa-calendar"></i> ${escapeHtml((a.datePublication || "").slice(0, 10))}</span>
           <span><i class="fa-regular fa-user"></i> ${escapeHtml(auteur(a))}</span>
+          ${peutModifier(a) ? `<button class="text-amber-500 hover:text-amber-700" data-edit-annonce="${escapeHtml(a.id)}" title="Modifier"><i class="fa-solid fa-pen"></i></button>` : ""}
           ${peutSupprimer(a) ? `<button class="text-rose-500 hover:text-rose-700" data-delete-annonce="${escapeHtml(a.id)}" title="Supprimer"><i class="fa-solid fa-trash"></i></button>` : ""}
         </div>
       </div>
       <h3 class="font-black text-slate-950">${escapeHtml(a.titre)}</h3>
       <p class="mt-1 whitespace-pre-line text-sm text-slate-600">${escapeHtml(a.contenu)}</p>
+      ${statutAnnonce(a) === STATUT_ANNONCE.REJETE && a.motifRejet ? `
+        <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+          <i class="fa-solid fa-circle-exclamation"></i> Motif du rejet : ${escapeHtml(a.motifRejet)}
+        </div>
+      ` : ""}
     </article>
   `;
 
@@ -137,7 +218,7 @@ export async function renderAnnoncePage() {
   `;
 
   const addBtn = document.getElementById("addAnnonceBtn");
-  if (addBtn) addBtn.addEventListener("click", () => openPublierAnnonce(user, renderAnnoncePage));
+  if (addBtn) addBtn.addEventListener("click", () => openFormAnnonce(user, role, groupeIdPublication, groupes, null, renderAnnoncePage));
 
   let search = "";
   let urgentOnly = false;
@@ -168,6 +249,13 @@ export async function renderAnnoncePage() {
     const pagEl = document.getElementById("annoncePagination");
     pagEl.innerHTML = pagination(page, totalPages);
     bindPagination(pagEl, (p) => { page = p; draw(); });
+
+    listEl.querySelectorAll("[data-edit-annonce]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const annonce = annonces.find((a) => a.id === btn.dataset.editAnnonce);
+        if (annonce) openFormAnnonce(user, role, groupeIdPublication, groupes, annonce, renderAnnoncePage);
+      });
+    });
 
     listEl.querySelectorAll("[data-delete-annonce]").forEach((btn) => {
       btn.addEventListener("click", () => {

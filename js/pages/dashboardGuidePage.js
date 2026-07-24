@@ -71,6 +71,10 @@ export async function renderDashboardGuidePage() {
       <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <article class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <h2 class="mb-4 text-lg font-black text-slate-950">Liste des Pèlerins Assignés</h2>
+          <div class="relative mb-4">
+            <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
+            <input id="guidePelerinsSearch" type="search" placeholder="Rechercher un pèlerin (nom, passeport)…" class="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm" />
+          </div>
           <div id="guidePelerinsList" class="grid gap-3"></div>
           <div id="guidePelerinsPagination"></div>
         </article>
@@ -89,11 +93,24 @@ export async function renderDashboardGuidePage() {
   document.getElementById("allerItineraireBtn").addEventListener("click", () => navigate("itineraire"));
 
   let page = 1;
+  let terme = "";
+
+  const filtrer = () => {
+    const q = terme.trim().toLowerCase();
+    if (!q) return pelerins;
+    return pelerins.filter((p) => {
+      const nom = String(utilisateurMap[p.utilisateurId]?.nomComplet || "").toLowerCase();
+      const passeport = String(p.numeroPasseport || "").toLowerCase();
+      return nom.includes(q) || passeport.includes(q);
+    });
+  };
+
   const draw = () => {
-    const totalPages = Math.max(1, Math.ceil(pelerins.length / PELERINS_PER_PAGE));
+    const filtres = filtrer();
+    const totalPages = Math.max(1, Math.ceil(filtres.length / PELERINS_PER_PAGE));
     if (page > totalPages) page = totalPages;
-    const items = pelerins.slice((page - 1) * PELERINS_PER_PAGE, page * PELERINS_PER_PAGE);
-    document.getElementById("guidePelerinsList").innerHTML = pelerins.length
+    const items = filtres.slice((page - 1) * PELERINS_PER_PAGE, page * PELERINS_PER_PAGE);
+    document.getElementById("guidePelerinsList").innerHTML = filtres.length
       ? items.map((p) => `
           <div class="flex items-center justify-between rounded-2xl bg-[#F2F2DE]/60 px-4 py-3">
             <div>
@@ -102,10 +119,16 @@ export async function renderDashboardGuidePage() {
             </div>
             ${visaBadge(p)}
           </div>`).join("")
-      : `<p class="text-sm text-slate-400">Aucun pèlerin dans ce groupe.</p>`;
+      : `<p class="text-sm text-slate-400">${pelerins.length ? "Aucun pèlerin ne correspond à votre recherche." : "Aucun pèlerin dans ce groupe."}</p>`;
     const pagEl = document.getElementById("guidePelerinsPagination");
     pagEl.innerHTML = pagination(page, totalPages);
     bindPagination(pagEl, (p) => { page = p; draw(); });
   };
   draw();
+
+  document.getElementById("guidePelerinsSearch").addEventListener("input", (e) => {
+    terme = e.target.value;
+    page = 1;
+    draw();
+  });
 }
