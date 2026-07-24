@@ -41,7 +41,7 @@ export async function renderMonGroupePelerinPage() {
     getPlanningDuGroupe(groupe.id),
     getCategories(),
   ]);
-  const categorieMap = Object.fromEntries(categories.map((c) => [c.idCategorie, c.libelle]));
+  const categorieMap = Object.fromEntries(categories.map((c) => [c.id, c.libelle]));
 
   // Le contact d'urgence, c'est le proche : on ne l'affiche que si le pèlerin en a un
   const procheAssocie = await getProcheByPelerinId(pelerin.id);

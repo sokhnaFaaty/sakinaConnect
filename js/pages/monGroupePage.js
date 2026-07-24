@@ -78,27 +78,12 @@ export async function renderMonGroupePage() {
 <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
       <article class="min-w-0 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="mb-4 text-lg font-black text-slate-950">Liste de mon Groupe (${pelerins.length})</h2>
-        ${renderTable({
-          rows: pelerins,
-          emptyMessage: "Aucun pèlerin dans ce groupe pour l'instant.",
-          columns: [
-            {
-              label: "Image",
-              render: (p) => {
-                const u = utilisateurMap[p.utilisateurId];
-                return u?.photo
-                  ? `<img src="${escapeHtml(u.photo)}" class="h-10 w-10 rounded-full object-cover" />`
-                  : `<div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400"><i class="fa-solid fa-user"></i></div>`;
-              },
-            },
-            { label: "Nom Complet", render: (p) => `<strong class="font-bold text-slate-950">${escapeHtml(utilisateurMap[p.utilisateurId]?.nomComplet || "—")}</strong>` },
-            { label: "Numéro Visa", render: (p) => escapeHtml(p.numeroPasseport) },
-            { label: "Statut Visa", render: (p) => p.statutVisa === "APPROUVE"
-              ? `<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">Approuvé</span>`
-              : `<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">${escapeHtml(p.statutVisa)}</span>` },
-            { label: "Fiche", render: (p) => `<button data-view-pelerin="${escapeHtml(p.id)}" title="Voir la fiche" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-[#333D2A] hover:bg-slate-50"><i class="fa-solid fa-eye"></i></button>` },
-          ],
-        })}
+        <div class="relative mb-4">
+          <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
+          <input id="groupePelerinsSearch" type="search" placeholder="Rechercher un pèlerin (nom, passeport)…" class="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm" />
+        </div>
+        <div id="groupePelerinsList"></div>
+        <div id="groupePelerinsPagination" class="mt-4 flex items-center justify-center gap-2"></div>
       </article>
 
       <article class="min-w-0 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
@@ -115,14 +100,88 @@ export async function renderMonGroupePage() {
 renderPlanningPanel(planning);
 
 const groupeMapSimple = { [groupe.id]: groupe };
-document.querySelectorAll("[data-view-pelerin]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const pelerin = pelerins.find((p) => p.id === button.dataset.viewPelerin);
-    if (pelerin) openPelerinDetail(pelerin, utilisateurMap, groupeMapSimple, hotels, [guide]);
+
+// Liste des pèlerins du groupe : recherche (nom / passeport) + pagination 2 par page
+let groupeSearchTerm = "";
+let groupePageActuelle = 1;
+
+const getPelerinsFiltres = () => {
+  const terme = groupeSearchTerm.trim().toLowerCase();
+  return pelerins.filter((p) => {
+    const nom = String(utilisateurMap[p.utilisateurId]?.nomComplet || "").toLowerCase();
+    const passeport = String(p.numeroPasseport || "").toLowerCase();
+    return !terme || nom.includes(terme) || passeport.includes(terme);
   });
+};
+
+const renderGroupePelerins = () => {
+  const listEl = document.getElementById("groupePelerinsList");
+  const paginationEl = document.getElementById("groupePelerinsPagination");
+  if (!listEl) return;
+
+  const filtres = getPelerinsFiltres();
+  const totalPages = Math.max(1, Math.ceil(filtres.length / PELERINS_PAR_PAGE));
+  if (groupePageActuelle > totalPages) groupePageActuelle = totalPages;
+
+  const debut = (groupePageActuelle - 1) * PELERINS_PAR_PAGE;
+  const pageRows = filtres.slice(debut, debut + PELERINS_PAR_PAGE);
+
+  listEl.innerHTML = renderTable({
+    rows: pageRows,
+    emptyMessage: "Aucun pèlerin ne correspond à votre recherche.",
+    columns: [
+      {
+        label: "Image",
+        render: (p) => {
+          const u = utilisateurMap[p.utilisateurId];
+          return u?.photo
+            ? `<img src="${escapeHtml(u.photo)}" class="h-10 w-10 rounded-full object-cover" />`
+            : `<div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400"><i class="fa-solid fa-user"></i></div>`;
+        },
+      },
+      { label: "Nom Complet", render: (p) => `<strong class="font-bold text-slate-950">${escapeHtml(utilisateurMap[p.utilisateurId]?.nomComplet || "—")}</strong>` },
+      { label: "Numéro Visa", render: (p) => escapeHtml(p.numeroPasseport) },
+      { label: "Statut Visa", render: (p) => p.statutVisa === "APPROUVE"
+        ? `<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">Approuvé</span>`
+        : `<span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">${escapeHtml(p.statutVisa)}</span>` },
+      { label: "Fiche", render: (p) => `<button data-view-pelerin="${escapeHtml(p.id)}" title="Voir la fiche" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-[#333D2A] hover:bg-slate-50"><i class="fa-solid fa-eye"></i></button>` },
+    ],
+  });
+
+  paginationEl.innerHTML = totalPages > 1
+    ? Array.from({ length: totalPages }, (_, i) => i + 1)
+        .map((page) => `
+          <button data-page-groupe="${page}" class="h-8 w-8 rounded-full text-xs font-bold transition ${
+            page === groupePageActuelle ? "bg-[#333D2A] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }">${page}</button>
+        `).join("")
+    : "";
+
+  paginationEl.querySelectorAll("[data-page-groupe]").forEach((button) => {
+    button.addEventListener("click", () => {
+      groupePageActuelle = Number(button.dataset.pageGroupe);
+      renderGroupePelerins();
+    });
+  });
+
+  listEl.querySelectorAll("[data-view-pelerin]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const pelerin = pelerins.find((p) => p.id === button.dataset.viewPelerin);
+      if (pelerin) openPelerinDetail(pelerin, utilisateurMap, groupeMapSimple, hotels, [guide]);
+    });
+  });
+};
+
+renderGroupePelerins();
+
+document.getElementById("groupePelerinsSearch").addEventListener("input", (e) => {
+  groupeSearchTerm = e.target.value;
+  groupePageActuelle = 1;
+  renderGroupePelerins();
 });
 }
       const PLANNING_PAR_PAGE = 2;
+const PELERINS_PAR_PAGE = 2;
 let planningPageActuelle = 1;
 
 function renderPlanningPanel(planning) {
