@@ -10,10 +10,21 @@ export function pagination(currentPage, totalPages) {
         active ? "bg-[#333D2A] text-white" : "text-slate-600 hover:bg-slate-100"
       } ${disabled ? "cursor-not-allowed opacity-40" : ""}">${label}</button>`;
 
-  const numeros = [];
+  const ellipsis = `<span class="flex h-9 min-w-9 items-center justify-center px-1 text-sm font-bold text-slate-400">…</span>`;
+
+  // Fenêtre de pages : toujours 1 et la dernière, plus current ± 1, avec des « … » pour les trous.
+  const pages = [];
   for (let i = 1; i <= totalPages; i++) {
-    numeros.push(btn(String(i), i, { active: i === currentPage }));
+    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== "…") {
+      pages.push("…");
+    }
   }
+
+  const numeros = pages.map((p) =>
+    p === "…" ? ellipsis : btn(String(p), p, { active: p === currentPage })
+  );
 
   return `
     <div class="mt-6 flex items-center justify-center gap-1" data-pagination>
