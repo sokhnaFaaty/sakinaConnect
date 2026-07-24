@@ -176,7 +176,7 @@ function afficherFiltresCategorie() {
   const container = document.getElementById("filtresCategorie");
 
   const boutons = [`<button data-cat="tous" class="filtre-cat-btn rounded-xl px-3 py-1.5 text-xs font-bold">Tous</button>`]
-    .concat(etatPage.categories.map((c) => `<button data-cat="${escapeHtml(c.idCategorie)}" class="filtre-cat-btn rounded-xl px-3 py-1.5 text-xs font-bold">${escapeHtml(c.libelle)}</button>`));
+    .concat(etatPage.categories.map((c) => `<button data-cat="${escapeHtml(c.id)}" class="filtre-cat-btn rounded-xl px-3 py-1.5 text-xs font-bold">${escapeHtml(c.libelle)}</button>`));
 
   container.innerHTML = boutons.join("");
 
@@ -230,7 +230,7 @@ function rafraichirAffichage() {
   const evenementsPage = evenementsFiltres.slice(debut, debut + EVENEMENTS_PAR_PAGE);
 
   const container = document.getElementById("listeEvenements");
-  const categorieMap = Object.fromEntries(etatPage.categories.map((c) => [c.idCategorie, c.libelle]));
+  const categorieMap = Object.fromEntries(etatPage.categories.map((c) => [c.id, c.libelle]));
 
   container.innerHTML = evenementsPage.length
     ? evenementsPage.map((e) => carteEvenement(e, categorieMap)).join("")
@@ -360,7 +360,7 @@ function initialiserCarteAvecPremierEvenement() {
 
 function corpsFormulaireEvenement(evenement) {
   const optionsCategories = etatPage.categories
-    .map((c) => `<option value="${escapeHtml(c.idCategorie)}" ${evenement?.categorieId === c.idCategorie ? "selected" : ""}>${escapeHtml(c.libelle)}</option>`)
+    .map((c) => `<option value="${escapeHtml(c.id)}" ${evenement?.categorieId === c.id ? "selected" : ""}>${escapeHtml(c.libelle)}</option>`)
     .join("");
 
   // Calcule le numéro de jour existant (nombre simple, comme dans ta maquette "Jour de Voyage (Numéro)")
